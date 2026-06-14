@@ -1,0 +1,10 @@
+.reg-wrap{ max-width:460px; margin:2rem auto; padding:1.4rem; box-shadow:0 8px 20px rgba(0,0,0,0.06); border-radius:8px; background:#fff }
+.reg-form{ display:flex; flex-direction:column; gap:10px }
+.form-label{ display:flex; flex-direction:column; font-weight:500 }
+.input{ padding:10px; border-radius:6px; border:1px solid #ddd }
+.message.error{ color:#c33 }
+.btn.primary{ padding:10px 12px; border-radius:6px; border:none; background:#007bff; color:#fff; cursor:pointer }
+
+.form-footer{ margin-top:8px; font-size:14px }
+.form-footer a{ color:#007bff; text-decoration:none }
+.form-footer a:hover{ text-decoration:underline }

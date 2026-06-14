@@ -1,0 +1,119 @@
+.order-success-container {
+    min-height: 100vh;
+    background: linear-gradient(120deg, #f3f8ff 0%, #dde7f2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .order-success-card {
+    background: #fff;
+    max-width: 410px;
+    width: 100%;
+    margin: 2rem;
+    padding: 2.2rem 2rem 2.8rem 2rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px -8px #aac6ee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .success-icon {
+    font-size: 3.7rem;
+    color: #34a853;
+    background: #e6f8ed;
+    border-radius: 50%;
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.1rem;
+  }
+  
+  .order-title {
+    color: #253268;
+    font-size: 1.52rem;
+    font-weight: 800;
+    margin-bottom: 0.65rem;
+    text-align: center;
+  }
+  
+  .order-desc {
+    color: #2d2d39;
+    font-size: 1.03rem;
+    margin-bottom: 1.3rem;
+    text-align: center;
+  }
+  
+  .order-info {
+    background: #f6faff;
+    width: 100%;
+    border-radius: 9px;
+    padding: 1rem 1.3rem;
+    margin-bottom: 1.3rem;
+    box-shadow: 0 1px 7px 0 #ececec35;
+  }
+  
+  .info-section {
+    margin-bottom: 0.75em;
+  }
+  
+  .info-label {
+    font-weight: 700;
+    color: #365b99;
+    margin-right: 8px;
+  }
+  
+  .info-value {
+    color: #27405b;
+    font-weight: 500;
+    font-size: .98rem;
+  }
+  
+  .about-section {
+    width: 100%;
+    background: #f8f9fe;
+    margin-bottom: 1.7rem;
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem 0.6rem 1.1rem;
+    box-shadow: 0 1px 6px 0 #e0e8f833;
+  }
+  
+  .about-section h3 {
+    color: #314a89;
+    font-size: 1.1rem;
+    margin-bottom: 0.42rem;
+    font-weight: 700;
+  }
+  .about-section p {
+    color: #405073;
+    font-size: .97rem;
+    margin: 0;
+  }
+  
+  .back-btn {
+    margin-top: 1.7rem;
+    display: inline-block;
+    background: linear-gradient(90deg, #3b72c6, #4a99fc);
+    color: #fff;
+    text-decoration: none;
+    padding: 0.82rem 0;
+    font-weight: 700;
+    font-size: 1.09rem;
+    border-radius: 9px;
+    width: 100%;
+    text-align: center;
+    transition: background .21s;
+    box-shadow: 0 2px 16px 0 #4a99fc18;
+    letter-spacing: 0.3px;
+  }
+  
+  .back-btn:hover {
+    background: linear-gradient(90deg, #295da5, #3b72c6);
+  }
+  @media (max-width: 500px) {
+    .order-success-card { padding: 1.2rem 0.5rem; margin: 1rem; }
+  }
+  

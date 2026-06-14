@@ -1,0 +1,15 @@
+.carousal-image{
+    height: 150px;
+    width: 70%;
+    background-repeat: cover;
+}
+
+.carousal-container{
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 26%;
+    background-image: url(https://i.pinimg.com/736x/65/af/04/65af0429857b8910bf6739ffd57da904.jpg);
+    border-radius: 0 0 8px 8px ;
+}

@@ -1,0 +1,117 @@
+.nav-container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px; /* tighter, more typical navbar padding */
+    min-height: 56px;  /* common navbar height */
+    background-color: rgb(28, 29, 29);
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+    top: 0;
+    left: 0;
+    right: 0;
+    max-height: 96px; /* keep under 100px */
+    z-index: 1000;
+}
+
+.react-icon{
+    color: white;
+}
+
+.username{
+    color: white;
+}
+
+.popup-container{
+    display: flex;
+    align-items: center;
+}
+
+.nav-links{
+    display: flex;
+    gap: 24px;
+}
+
+.nav-pill{
+    display: inline-block;
+    padding: 4px 12px; /* reduce visual height */
+    background: #e6e6e6;
+    border-radius: 6px;
+    color: #222;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.hamburger-btn{
+    background: transparent;
+    border: none;
+    font-size: 20px; /* icon size */
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Position reactjs-popup modal at top-right */
+.header-popup-content{
+    position: fixed !important;
+    top: 56px; /* match navbar height */
+    right: 16px;
+    left: auto !important;
+    margin: 0 !important;
+}
+
+/* Optional: size/style of the popup */
+.header-popup-content > .popup-panel{
+    padding: 12px;
+    background: #e0e0e0;
+    border: 1px solid #cfcfcf;
+    margin-top: 36px;
+    border-radius: 5px;
+}
+
+/* Adjust profile slot visuals */
+.profile-slot svg{ font-size: 20px; }
+.profile-slot p{ margin: 0; }
+
+.close-btn{
+    background: transparent;
+    border: none;
+    float: right;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.menu-list{
+    list-style: none;
+    padding: 8px 0 16px 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.menu-btn{
+    display: block;
+    width: 140px;
+    padding: 6px 10px;
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    border: none;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.logout-btn{
+    display: block;
+    margin-top: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 140px;
+    padding: 6px 10px;
+    color: #fff;
+    border: none;
+}

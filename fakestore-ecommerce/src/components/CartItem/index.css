@@ -1,0 +1,55 @@
+.cart-item-container{
+    background-color: white;
+    width: 90%;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    padding-top: 10px;
+    margin-top: 5px;
+}
+
+.item-img{
+    height: 150px;
+    width: auto;
+    border: 1px black solid;
+    margin: 5px;
+    padding: 5px;
+}
+
+.details-container{
+    color: black;
+    font-family: "Roboto";
+    text-align: left;
+}
+
+.title{
+    font-size: 24px;
+
+}
+
+.price{
+    font-size: 22px;
+}
+
+.rating{
+    font-size: 20px;
+}
+
+.remove-btn-container{
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+}
+
+.remove-btn{
+    height: 30px;
+    width: auto;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    background-color: rgb(40, 39, 39);
+    margin-top: 25px;
+}
+
+
+

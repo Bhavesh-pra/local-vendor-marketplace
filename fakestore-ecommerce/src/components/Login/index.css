@@ -1,0 +1,9 @@
+.login-card{ max-width:420px; margin:2.2rem auto; padding:1.6rem; box-shadow:0 8px 22px rgba(0,0,0,0.06); border-radius:8px; background:#fff; display:flex; flex-direction:column; gap:10px }
+.login-title{ margin:0 0 6px }
+.input{ padding:10px 12px; border-radius:6px; border:1px solid #ddd }
+.message.error{ color:#c33 }
+.btn.primary{ padding:10px 12px; border-radius:6px; border:none; background:#007bff; color:#fff; cursor:pointer }
+.btn.primary:hover{ opacity:0.95 }
+.form-footer{ margin-top:8px; font-size:14px }
+.form-footer a{ color:#007bff; text-decoration:none }
+.form-footer a:hover{ text-decoration:underline }
