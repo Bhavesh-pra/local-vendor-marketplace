@@ -4,8 +4,8 @@ import ProductContext from '../../context/ProductContext'; // Adjust path
 import './index.css';
 
 function Login() {
-  const { setUserId } = useContext(ProductContext);
-  const [name, setName] = useState('');
+  const { setAuthUser } = useContext(ProductContext);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -17,12 +17,12 @@ function Login() {
       const response = await fetch('http://localhost:3000/login/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, password }),
+        body: JSON.stringify({ email, password }),
       });
       if (response.ok) {
-        const { jwtToken, userId } = await response.json();
+        const { jwtToken, userId, username, role } = await response.json();
         document.cookie = `jwt_token=${jwtToken}; path=/`;
-        setUserId(userId); ; // Store userId in context for global access
+        setAuthUser({ userId, username, role });
         navigate('/');
       } else {
         setError(await response.text());
@@ -36,11 +36,11 @@ function Login() {
     <form onSubmit={handleLogin} className="login-card">
       <h2 className="login-title">Login</h2>
       <input
-        type="text"
+        type="email"
         className="input"
-        placeholder="Name"
-        value={name}
-        onChange={e => setName(e.target.value)}
+        placeholder="Email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
         required
       />
       <input

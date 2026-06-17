@@ -20,12 +20,14 @@ class App extends Component {
   state = {
     productItemList: [],
     totalCost: 0,
-    userId: null, 
+    userId: Number(localStorage.getItem('userId')) || null,
+    username: localStorage.getItem('username') || '',
+    role: localStorage.getItem('role') || '',
   };
 
   addItems = (item) => {
     this.setState((prevState) => {
-      const price = parseFloat(item.price);
+      const price = parseFloat(item.selling_price || item.price || 0);
       const exists = prevState.productItemList.some(each => each.id === item.id);
       let updatedList;
       let updatedCost;
@@ -48,7 +50,7 @@ class App extends Component {
   
   removeItems = (item) => {
     this.setState(prevState => {
-      const price = parseFloat(item.price);
+      const price = parseFloat(item.selling_price || item.price || 0);
       const updatedList = prevState.productItemList.filter(each => each.id !== item.id);
       const updatedCost = Number(prevState.totalCost) - Number(price);
   
@@ -70,12 +72,30 @@ class App extends Component {
     this.setState({ userId: id });
   };
 
+  setAuthUser = ({ userId, username, role }) => {
+    localStorage.setItem('userId', userId);
+    localStorage.setItem('username', username);
+    localStorage.setItem('role', role);
+    this.setState({ userId, username, role });
+  };
+
+  clearAuthUser = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+    this.setState({ userId: null, username: '', role: '' });
+  };
+
   render() {
     const contextValue = {
       productItemList: this.state.productItemList,
       totalCost: this.state.totalCost,
       userId: this.state.userId,      // provide userId
+      username: this.state.username,
+      role: this.state.role,
       setUserId: this.setUserId, 
+      setAuthUser: this.setAuthUser,
+      clearAuthUser: this.clearAuthUser,
       addItems: this.addItems,
       removeItems: this.removeItems,
       clearItems: this.clearItems,

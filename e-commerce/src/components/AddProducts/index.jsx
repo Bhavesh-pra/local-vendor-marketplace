@@ -8,8 +8,8 @@ const AddProduct = () => {
     category: '',
     description: '',
     date_of_manufacture: '',
-    original_price: '',
-    discounted_price: '',
+    cost_price: '',
+    selling_price: '',
     image_url: '',
     size_or_quantity: '',
   });
@@ -42,8 +42,8 @@ const AddProduct = () => {
       !form.category ||
       !form.description ||
       !form.date_of_manufacture ||
-      !form.original_price ||
-      !form.discounted_price ||
+      !form.cost_price ||
+      !form.selling_price ||
       !form.image_url
     ) {
       setError('All fields except size_or_quantity are required.');
@@ -61,8 +61,8 @@ const AddProduct = () => {
           category: form.category,
           description: form.description,
           date_of_manufacture: form.date_of_manufacture,
-          original_price: Number(form.original_price),
-          discounted_price: Number(form.discounted_price),
+          cost_price: Number(form.cost_price),
+          selling_price: Number(form.selling_price),
           image_url: form.image_url,
           size_or_quantity: form.size_or_quantity || null,
         }),
@@ -74,8 +74,8 @@ const AddProduct = () => {
           category: '',
           description: '',
           date_of_manufacture: '',
-          original_price: '',
-          discounted_price: '',
+          cost_price: '',
+          selling_price: '',
           image_url: '',
           size_or_quantity: '',
         });
@@ -123,13 +123,13 @@ const AddProduct = () => {
         </label>
         <br />
         <label>
-          Original Price:
-          <input type="number" name="original_price" value={form.original_price} onChange={handleChange} required min="1" />
+          Cost Price:
+          <input type="number" name="cost_price" value={form.cost_price} onChange={handleChange} required min="1" />
         </label>
         <br />
         <label>
-          Discounted Price:
-          <input type="number" name="discounted_price" value={form.discounted_price} onChange={handleChange} required min="0" />
+          Selling Price:
+          <input type="number" name="selling_price" value={form.selling_price} onChange={handleChange} required min="0" />
         </label>
         <br />
         <label>

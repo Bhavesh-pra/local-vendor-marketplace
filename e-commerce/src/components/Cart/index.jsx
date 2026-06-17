@@ -23,41 +23,54 @@ const Cart = () => {
 
   const navigate = useNavigate();
 
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  };
+
   const [prevCarts, setPrevCarts] = useState([]);
   const [loadingPrevCarts, setLoadingPrevCarts] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch previous carts + their items for the user
-  const fetchUserPrevCarts = async () => {
+  // Fetch previous orders for the user
+  const fetchUserPrevOrders = async () => {
     if (!userId) return;
     setLoadingPrevCarts(true);
     setError(null);
 
-    try {
-      const cartsRes = await fetch(`http://localhost:3000/carts/${userId}`);
-      if (!cartsRes.ok) throw new Error('Failed to fetch carts');
-      const carts = await cartsRes.json();
+    const token = getCookie('jwt_token');
 
-      // For each cart fetch items
-      const cartsWithItems = await Promise.all(
-        carts.map(async (cart) => {
-          const itemsRes = await fetch(`http://localhost:3000/cart-items/${cart.cart_id}`);
-          const items = itemsRes.ok ? await itemsRes.json() : [];
-          return { ...cart, items };
+    try {
+      const ordersRes = await fetch(`http://localhost:3000/orders/my-orders`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!ordersRes.ok) throw new Error('Failed to fetch orders');
+      const orders = await ordersRes.json();
+
+      // For each order fetch details
+      const ordersWithItems = await Promise.all(
+        orders.map(async (ord) => {
+          const detailsRes = await fetch(`http://localhost:3000/orders/${ord.order_id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const details = detailsRes.ok ? await detailsRes.json() : { items: [] };
+          return details;
         })
       );
 
-      setPrevCarts(cartsWithItems);
+      setPrevCarts(ordersWithItems);
     } catch (err) {
-      setError(err.message || 'Error fetching previous carts');
+      setError(err.message || 'Error fetching previous orders');
     }
     setLoadingPrevCarts(false);
   };
 
-  // Refresh prev carts on mount and when userId changes
+  // Refresh prev orders on mount and when userId changes
   useEffect(() => {
     if (userId) {
-      fetchUserPrevCarts();
+      fetchUserPrevOrders();
     }
   }, [userId]);
 
@@ -65,12 +78,17 @@ const Cart = () => {
   const createNewCartAndAddItems = async () => {
     if (!userId || productItemList.length === 0) return;
 
+    const token = getCookie('jwt_token');
+
     try {
       // Create new cart
       const createCartRes = await fetch('http://localhost:3000/carts/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({}),
       });
       if (!createCartRes.ok) throw new Error('Failed to create cart');
 
@@ -81,7 +99,10 @@ const Cart = () => {
         productItemList.map(item =>
           fetch('http://localhost:3000/cart-items/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
               cart_id,
               product_id: item.id,
@@ -90,8 +111,8 @@ const Cart = () => {
           })
         )
       );
- // clear current cart
-      fetchUserPrevCarts(); // refresh previous carts
+
+      fetchUserPrevOrders(); // refresh previous orders
       navigate('/buy-item');
 
     } catch (err) {
@@ -148,19 +169,18 @@ const Cart = () => {
             <p>No previous purchases found.</p>
           ) : (
             prevCarts.map(cart => (
-              <div key={cart.cart_id} className="prev-cart">
-                <h3>Order #{cart.cart_id}</h3>
-                {cart.items.length === 0 ? (
-                  <p>No items found for this order.</p>
-                ) : (
+              <div key={cart.order_id || cart.cart_id} className="prev-cart">
+                <h3>Order #{cart.order_number || cart.order_id || cart.cart_id}</h3>
+                {cart.items && cart.items.length > 0 ? (
                   <ul className="prev-cart-items">
                     {cart.items.map(item => (
-                      <li key={item.cart_item_id}>
-                        Product ID: {item.product_id}, Quantity: {item.quantity}
-                        {/* You can fetch product details for full info if needed */}
+                      <li key={item.order_item_id || item.cart_item_id}>
+                        {item.product_name || `Product ID: ${item.product_id}`}, Qty: {item.quantity}, Price: ₹{item.unit_price}
                       </li>
                     ))}
                   </ul>
+                ) : (
+                  <p>No items found for this order.</p>
                 )}
               </div>
             ))

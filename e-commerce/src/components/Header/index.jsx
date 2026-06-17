@@ -1,3 +1,4 @@
+import {useContext} from "react";
 import {Link} from "react-router-dom";
 
 import Popup from "reactjs-popup";
@@ -6,13 +7,17 @@ import { FaSearch } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { RiCloseLine } from "react-icons/ri";
+import ProductContext from "../../context/ProductContext";
 
 import './index.css';
 
 const Header = () => {
+    const {username, clearAuthUser} = useContext(ProductContext);
+
     const onClickLogout = () => {
         // Simple cookie removal (no library needed!)
         document.cookie = "jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        clearAuthUser();
         
         // Simple redirect
         window.location.href = "/login";
@@ -22,7 +27,7 @@ const Header = () => {
         <nav className="navbar navbar-expand-lg app-nav navbar-light nav-container">
             <div className="profile-slot d-flex align-items-center gap-2">
                 <FaUser className="react-icon"/>
-                <p className="username">Username</p>
+                <p className="username">{username || 'User'}</p>
             </div>
             <div className="nav-links">
                 <Link className="nav-pill" to="/">Home</Link>

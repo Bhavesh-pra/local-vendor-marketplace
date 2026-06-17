@@ -85,11 +85,13 @@ class Home extends Component {
 
     const updatedData = data.map(product => ({
       id: product.product_id,
-      category: product.category,
+      category: product.category_name,
       description: product.description,
       productImage: product.image_url,
-      price: product.original_price,
-      discountedPrice: product.discounted_price,
+      price: product.cost_price,
+      discountedPrice: product.selling_price,
+      cost_price: product.cost_price,
+      selling_price: product.selling_price,
       title: product.product_name,
       rating: Math.round(product.average_rating),
       purchased: 0

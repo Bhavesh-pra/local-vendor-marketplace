@@ -6,9 +6,7 @@ const Registration = () => {
   const [form, setForm] = useState({
     name: '',
     password: '',
-    emailId: '',
-    address: '',
-    mobileNumber: ''
+    email: '',
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -48,16 +46,10 @@ const Registration = () => {
           <input name="name" className="input" value={form.name} onChange={handleChange} required />
         </label>
         <label className="form-label">Email
-          <input name="emailId" type="email" className="input" value={form.emailId} onChange={handleChange} required />
+          <input name="email" type="email" className="input" value={form.email} onChange={handleChange} required />
         </label>
         <label className="form-label">Password
           <input name="password" type="password" className="input" value={form.password} onChange={handleChange} required />
-        </label>
-        <label className="form-label">Address
-          <input name="address" className="input" value={form.address} onChange={handleChange} required />
-        </label>
-        <label className="form-label">Mobile Number
-          <input name="mobileNumber" className="input" value={form.mobileNumber} onChange={handleChange} required />
         </label>
         {error && <div className="message error">{error}</div>}
         <button type="submit" className="btn primary">Register</button>

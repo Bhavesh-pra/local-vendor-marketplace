@@ -1,0 +1,44 @@
+PRAGMA foreign_keys = OFF;
+BEGIN TRANSACTION;
+
+DROP INDEX IF EXISTS ux_users_new_email;
+DROP INDEX IF EXISTS ux_users_new_username;
+DROP INDEX IF EXISTS ix_users_new_role_status;
+DROP INDEX IF EXISTS ux_suppliers_new_name;
+DROP INDEX IF EXISTS ix_suppliers_new_status;
+DROP INDEX IF EXISTS ux_categories_new_name;
+DROP INDEX IF EXISTS ux_categories_new_slug;
+DROP INDEX IF EXISTS ux_products_new_sku;
+DROP INDEX IF EXISTS ix_products_new_supplier;
+DROP INDEX IF EXISTS ix_products_new_category;
+DROP INDEX IF EXISTS ix_products_new_status;
+DROP INDEX IF EXISTS ix_products_new_name;
+DROP INDEX IF EXISTS ix_inventory_new_reorder;
+DROP INDEX IF EXISTS ix_cart_new_user_status;
+DROP INDEX IF EXISTS ix_cart_items_new_cart;
+DROP INDEX IF EXISTS ix_cart_items_new_product;
+DROP INDEX IF EXISTS ix_orders_new_user_date;
+DROP INDEX IF EXISTS ix_orders_new_status_payment;
+DROP INDEX IF EXISTS ix_order_items_new_order;
+DROP INDEX IF EXISTS ix_order_items_new_product;
+DROP INDEX IF EXISTS ix_order_items_new_supplier;
+DROP INDEX IF EXISTS ix_reviews_new_product_date;
+DROP INDEX IF EXISTS ix_reviews_new_user;
+
+DROP TABLE IF EXISTS order_items_new;
+DROP TABLE IF EXISTS orders_new;
+DROP TABLE IF EXISTS cart_items_new;
+DROP TABLE IF EXISTS cart_new;
+DROP TABLE IF EXISTS inventory_new;
+DROP TABLE IF EXISTS reviews_new;
+DROP TABLE IF EXISTS products_new;
+DROP TABLE IF EXISTS categories_new;
+DROP TABLE IF EXISTS suppliers_new;
+DROP TABLE IF EXISTS users_new;
+DROP TABLE IF EXISTS map_user_supplier;
+DROP TABLE IF EXISTS map_category;
+DROP TABLE IF EXISTS tmp_rating_pick;
+DROP TABLE IF EXISTS tmp_review_dedup;
+
+COMMIT;
+PRAGMA foreign_keys = ON;

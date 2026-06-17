@@ -39,14 +39,16 @@ const ProductItemDetails = () => {
       const updatedProduct = {
         id: data.product_id,
         title: data.product_name,
-        price: data.original_price,
-        discountedPrice: data.discounted_price,
+        price: data.cost_price,
+        discountedPrice: data.selling_price,
+        cost_price: data.cost_price,
+        selling_price: data.selling_price,
         description: data.description,
-        categoryName: data.category || '',
+        categoryName: data.category_name || '',
         productImages: Array.isArray(data.images) ? data.images : [],
         mainImage: data.image_url || '',
-        creationAt: data.creationAt || '',
-        updatedAt: data.updatedAt || '',
+        creationAt: data.created_at || '',
+        updatedAt: data.updated_at || '',
         rating: data.average_rating || 0,
         purchased: 0,
       };
@@ -81,51 +83,38 @@ const ProductItemDetails = () => {
 
   const handleAddReview = async (e) => {
     e.preventDefault();
-    const reviewDate = Date.now();
-    console.log('Posting review data:', {
-    product_id: id,
-    user_id: userId,
-    comment: newComment,
-    review_date: reviewDate,
-  });
+    const token = (() => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; jwt_token=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    })();
+
+    if (!token) {
+      setReviewPostStatus('You must be logged in to submit a review.');
+      return;
+    }
 
     if (!newComment.trim() || newRating < 1 || newRating > 5) {
       setReviewPostStatus('Please enter valid comment and rating (1-5).');
       return;
     }
     try {
-      const reviewDate = Date.now();
-
-      // POST review
       const reviewResponse = await fetch('http://localhost:3000/reviews/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           product_id: id,
-          user_id: userId,
           comment: newComment,
-          review_date: reviewDate,
+          rating: newRating
         }),
       });
       if (!reviewResponse.ok) {
         const errorText = await reviewResponse.text();
         setReviewPostStatus('Failed to post review: ' + errorText);
-        return;
-      }
-
-      // POST rating
-      const ratingResponse = await fetch('http://localhost:3000/ratings/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          product_id: id,
-          rating: newRating,
-        }),
-      });
-      if (!ratingResponse.ok) {
-        const errorText = await ratingResponse.text();
-        setReviewPostStatus('Failed to post rating: ' + errorText);
         return;
       }
 
@@ -138,7 +127,7 @@ const ProductItemDetails = () => {
       getProductDetails();
 
     } catch (err) {
-      setReviewPostStatus('Network error posting review and rating.');
+      setReviewPostStatus('Network error posting review.');
     }
   };
 
@@ -233,10 +222,10 @@ const ProductItemDetails = () => {
               {reviews.length === 0 ? (
                 <p>No reviews yet.</p>
               ) : (
-                reviews.map(({ user_id, comment, review_date }, index) => (
+                reviews.map(({ username, user_id, rating, comment, created_at }, index) => (
                   <div key={index} className="review-item">
-                    <p><strong>User {user_id}:</strong> {comment}</p>
-                    <p className="review-date">{new Date(review_date).toLocaleString()}</p>
+                    <p><strong>{username || `User ${user_id}`} ({rating} ★):</strong> {comment}</p>
+                    <p className="review-date">{new Date(created_at).toLocaleString()}</p>
                   </div>
                 ))
               )}

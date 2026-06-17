@@ -6,8 +6,15 @@ import { useNavigate } from 'react-router-dom';
 import './index.css';
 
 const BuyItems = () => {
-  const { productItemList } = useContext(ProductContext);
+  const { productItemList, clearItems } = useContext(ProductContext);
   const navigate = useNavigate();
+
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -32,15 +39,24 @@ const BuyItems = () => {
 
     console.log('Order Data:', orderData); // Debug log
 
+    const token = getCookie('jwt_token');
+
     try {
-      const res = await fetch('http://localhost:3000/create-order', {
+      const res = await fetch('http://localhost:3000/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(orderData),
       });
       if (res.ok) {
+        clearItems();
         alert('Order placed successfully!');
         navigate('/order-success');
+      } else {
+        const errMsg = await res.text();
+        alert('Order failed: ' + errMsg);
       }
     } catch (err) {
       alert('Order failed: ' + err.message);

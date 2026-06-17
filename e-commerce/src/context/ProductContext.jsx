@@ -7,7 +7,11 @@ const ProductContext = React.createContext({
     removeItems: () => {},
     clearItems: () => {},
     setUserId: () => {},
+    setAuthUser: () => {},
+    clearAuthUser: () => {},
     userId: null,
+    username: '',
+    role: '',
 })
 
 export default ProductContext;
