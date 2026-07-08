@@ -1,12 +1,19 @@
 .checkout-delivery-card {
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.checkout-delivery-card:hover {
+  border-color: var(--color-border-default);
+  box-shadow: var(--shadow-md);
 }
 
 .checkout-delivery-card__header {
@@ -31,7 +38,7 @@
 .checkout-delivery-card__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .checkout-delivery-card__row {
@@ -50,7 +57,7 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -62,51 +69,47 @@
   color: var(--color-text-heading);
 }
 
+.checkout-delivery-card__delivery-subtext {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 6px 0 0 0;
+  line-height: 1.4;
+}
+
 .checkout-delivery-card__shipping-wrap {
   width: 100%;
 }
 
-.checkout-delivery-card__price-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+/* Shipping badges matching CartSummary style */
+.checkout-shipping-badge {
+  display: inline-flex;
   flex-wrap: wrap;
-}
-
-.checkout-delivery-card__free {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-status-success, #10b981);
-}
-
-.checkout-delivery-card__subtext {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  margin: var(--space-1) 0 0 0;
-  line-height: var(--line-height-base);
-}
-
-.checkout-delivery-card__subtext--success {
-  color: var(--color-status-success, #10b981);
-  font-weight: var(--font-weight-medium);
-}
-
-.checkout-delivery-card__price {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-heading);
-}
-
-.checkout-delivery-card__note {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  margin: var(--space-1) 0 0 0;
-  font-style: italic;
-}
-
-.checkout-delivery-card__delivery-subtext {
-  font-size: 11px;
-  color: var(--color-text-muted);
-  margin: 4px 0 0 0;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
   line-height: 1.4;
+  width: 100%;
+}
+
+.checkout-shipping-badge--free {
+  background-color: var(--color-status-success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  color: var(--color-status-success);
+}
+
+.checkout-shipping-badge--paid {
+  background-color: var(--color-status-warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  color: var(--color-status-warning);
+}
+
+.checkout-shipping-badge__text {
+  font-weight: 600;
+}
+
+.checkout-shipping-badge__sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
 }

@@ -1,36 +1,49 @@
+/* ShopCart Dark Theme Checkout Page wrapper */
+.lovable-checkout-page {
+  background-color: var(--color-surface-base);
+  color: var(--color-text-body);
+  min-height: calc(100vh - var(--header-height, 72px));
+  margin-top: 0;
+  margin-bottom: calc(-1 * var(--space-16)); /* Compensate layout block padding */
+  padding-top: 32px;
+  padding-bottom: 96px;
+}
+
 .checkout-page {
-  padding-block: var(--space-6) var(--space-20);
   /* Safe padding offset on mobile viewports for the sticky footer */
   padding-bottom: 90px;
 }
 
+/* Stepper */
 .checkout-stepper {
   display: flex;
   align-items: center;
   height: 54px;
   gap: var(--space-2);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
 }
 
 .checkout-stepper__step {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   white-space: nowrap;
+  transition: color var(--duration-normal) var(--easing-out), filter var(--duration-normal) var(--easing-out);
 }
 
 .checkout-stepper__icon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   border: 1.5px solid currentColor;
+  transition: border-color var(--duration-normal) var(--easing-out), background-color var(--duration-normal) var(--easing-out);
 }
 
 .checkout-stepper__label {
@@ -50,16 +63,17 @@
 
 .checkout-stepper__step--active {
   color: var(--color-brand-primary, #6366f1);
+  filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.2));
 }
 
 .checkout-stepper__step--upcoming {
   color: var(--color-text-muted, #8a8d93);
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .checkout-stepper__line {
   flex: 1;
-  height: 2px;
+  height: 1.5px;
   background: var(--color-border-subtle, #2d3139);
   min-width: 16px;
 }
@@ -68,27 +82,75 @@
   background: var(--color-status-success, #10b981);
 }
 
-.checkout-page__title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-heading);
-  margin: 0 0 var(--space-8) 0;
+/* Header Area */
+.checkout-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
+.checkout-page__header-left {
+  flex: 1;
+}
+
+.checkout-page__title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-text-heading);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.checkout-page__subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 8px 0 0 0;
+  font-weight: 500;
+}
+
+.checkout-page__header-right {
+  display: flex;
+  align-items: center;
+}
+
+.checkout-page__back-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checkout-page__back-link:hover {
+  color: var(--color-text-heading);
+  transform: translateX(-2px);
+}
+
+/* Error Banner */
 .checkout-page__error-banner {
   background: var(--color-status-error-bg);
-  border: 1px solid var(--color-status-error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
 }
 
 .checkout-page__error-message {
   font-size: var(--font-size-sm);
   color: var(--color-status-error);
   font-weight: var(--font-weight-semibold);
+  margin: 0;
 }
 
+/* Grid layout */
 .checkout-page__content {
   display: grid;
   grid-template-columns: 1fr;
@@ -109,6 +171,8 @@
   justify-content: center;
   padding-block: var(--space-20);
   gap: var(--space-4);
+  background: var(--color-surface-base);
+  min-height: calc(100vh - var(--header-height, 72px));
 }
 
 .checkout-page__loading-text {
@@ -121,6 +185,8 @@
   padding-block: var(--space-16);
   display: flex;
   justify-content: center;
+  background: var(--color-surface-base);
+  min-height: calc(100vh - var(--header-height, 72px));
 }
 
 /* Mobile Sticky Checkout Bar (Viewports < 768px) */
@@ -192,14 +258,14 @@
 /* ── Desktop Viewports (min-width: 1024px) ────────────────────────────────── */
 @media (min-width: 1024px) {
   .checkout-page__content {
-    grid-template-columns: 68fr 32fr;
+    grid-template-columns: 70fr 30fr;
     gap: var(--space-10);
   }
   .checkout-page {
     padding-block: var(--space-8) var(--space-16);
   }
   .checkout-page__title {
-    font-size: var(--font-size-3xl);
+    font-size: 32px;
   }
 }
 

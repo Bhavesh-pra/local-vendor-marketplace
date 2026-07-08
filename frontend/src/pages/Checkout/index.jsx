@@ -18,6 +18,7 @@ import { calculateShipping, calculateTotal } from '../../utils/pricing.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { extractErrorMessage } from '../../utils/extractErrorMessage.js';
 import { ROUTES } from '../../constants/routes.js';
+import { AlertCircle } from 'lucide-react';
 import './index.css';
 
 /**
@@ -206,6 +207,7 @@ export default function Checkout() {
   // Submit order action
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (submitting) return;
 
     // Final validation block
     const formErrors = {};
@@ -302,81 +304,97 @@ export default function Checkout() {
 
   return (
     <PageLayout>
-      <div className="checkout-page container">
-        {/* Visual progress stepper */}
-        <div className="checkout-stepper">
-          <div className="checkout-stepper__step checkout-stepper__step--completed">
-            <span className="checkout-stepper__icon">✓</span>
-            <Link to={ROUTES.CART} className="checkout-stepper__label">Cart</Link>
+      <div className="lovable-checkout-page">
+        <div className="checkout-page container">
+          {/* Visual progress stepper */}
+          <div className="checkout-stepper">
+            <div className="checkout-stepper__step checkout-stepper__step--completed">
+              <span className="checkout-stepper__icon">✓</span>
+              <Link to={ROUTES.CART} className="checkout-stepper__label">Cart</Link>
+            </div>
+            <div className="checkout-stepper__line checkout-stepper__line--completed"></div>
+            <div className="checkout-stepper__step checkout-stepper__step--active">
+              <span className="checkout-stepper__icon">●</span>
+              <span className="checkout-stepper__label">Checkout</span>
+            </div>
+            <div className="checkout-stepper__line"></div>
+            <div className="checkout-stepper__step checkout-stepper__step--upcoming">
+              <span className="checkout-stepper__icon">○</span>
+              <span className="checkout-stepper__label">Order Placed</span>
+            </div>
           </div>
-          <div className="checkout-stepper__line checkout-stepper__line--completed"></div>
-          <div className="checkout-stepper__step checkout-stepper__step--active">
-            <span className="checkout-stepper__icon">●</span>
-            <span className="checkout-stepper__label">Checkout</span>
-          </div>
-          <div className="checkout-stepper__line"></div>
-          <div className="checkout-stepper__step checkout-stepper__step--upcoming">
-            <span className="checkout-stepper__icon">○</span>
-            <span className="checkout-stepper__label">Order Placed</span>
-          </div>
-        </div>
 
-        <h1 className="checkout-page__title">Secure Checkout</h1>
-
-        {/* Backend Error Banner */}
-        {backendError && (
-          <div className="checkout-page__error-banner" role="alert">
-            <p className="checkout-page__error-message">{backendError}</p>
+          {/* Restructured Header area */}
+          <div className="checkout-page__header">
+            <div className="checkout-page__header-left">
+              <h1 className="checkout-page__title">Secure Checkout</h1>
+              <p className="checkout-page__subtitle">
+                Please review and complete your shipping and payment information.
+              </p>
+            </div>
+            <div className="checkout-page__header-right">
+              <Link to={ROUTES.CART} className="checkout-page__back-link">
+                &larr; Return to Cart
+              </Link>
+            </div>
           </div>
-        )}
 
-        <div className="checkout-page__content">
-          {/* Left Column: Form Sections */}
-          <div className="checkout-page__form-wrap">
-            <form id="checkout-form" onSubmit={handleSubmit} noValidate>
-              <CheckoutCustomerForm
-                formData={formData}
-                errors={errors}
-                onChange={handleInputChange}
-                submitting={submitting}
+          {/* Backend Error Banner */}
+          {backendError && (
+            <div className="checkout-page__error-banner" role="alert">
+              <AlertCircle size={16} className="checkout-page__error-icon" style={{ marginRight: '8px', flexShrink: 0 }} />
+              <p className="checkout-page__error-message">{backendError}</p>
+            </div>
+          )}
+
+          <div className="checkout-page__content">
+            {/* Left Column: Form Sections */}
+            <div className="checkout-page__form-wrap">
+              <form id="checkout-form" onSubmit={handleSubmit} noValidate>
+                <CheckoutCustomerForm
+                  formData={formData}
+                  errors={errors}
+                  onChange={handleInputChange}
+                  submitting={submitting}
+                />
+              </form>
+
+              <CheckoutDeliveryCard shipping={shipping} items={items} subtotal={subtotal} />
+
+              <CheckoutPaymentSelector
+                selectedMethod={formData.paymentMethod}
+                onChange={handlePaymentChange}
               />
-            </form>
+            </div>
 
-            <CheckoutDeliveryCard shipping={shipping} items={items} subtotal={subtotal} />
-
-            <CheckoutPaymentSelector
-              selectedMethod={formData.paymentMethod}
-              onChange={handlePaymentChange}
-            />
-          </div>
-
-          {/* Right Column: Order Summary */}
-          <div className="checkout-page__summary-wrap">
-            <OrderSummary
-              items={items}
-              subtotal={subtotal}
-              submitting={submitting}
-              isValid={isValid}
-            />
+            {/* Right Column: Order Summary */}
+            <div className="checkout-page__summary-wrap">
+              <OrderSummary
+                items={items}
+                subtotal={subtotal}
+                submitting={submitting}
+                isValid={isValid}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Sticky Checkout Action Bar */}
-      <div className="checkout-page__mobile-sticky">
-        <div className="checkout-page__mobile-sticky-content container">
-          <div className="checkout-page__mobile-sticky-info">
-            <span className="checkout-page__mobile-sticky-label">Grand Total</span>
-            <span className="checkout-page__mobile-sticky-val">{formatCurrency(grandTotal)}</span>
+        {/* Mobile Sticky Checkout Action Bar */}
+        <div className="checkout-page__mobile-sticky">
+          <div className="checkout-page__mobile-sticky-content container">
+            <div className="checkout-page__mobile-sticky-info">
+              <span className="checkout-page__mobile-sticky-label">Grand Total</span>
+              <span className="checkout-page__mobile-sticky-val">{formatCurrency(grandTotal)}</span>
+            </div>
+            <button
+              type="submit"
+              form="checkout-form"
+              className="btn btn--primary checkout-page__mobile-sticky-btn"
+              disabled={!isValid || submitting}
+            >
+              {submitting ? 'Processing...' : 'Place Order'}
+            </button>
           </div>
-          <button
-            type="submit"
-            form="checkout-form"
-            className="btn btn--primary checkout-page__mobile-sticky-btn"
-            disabled={!isValid || submitting}
-          >
-            {submitting ? 'Processing...' : 'Place Order'}
-          </button>
         </div>
       </div>
     </PageLayout>

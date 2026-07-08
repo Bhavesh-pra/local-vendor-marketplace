@@ -34,29 +34,25 @@ export function CheckoutDeliveryCard({ shipping, items = [], subtotal }) {
         <div className="checkout-delivery-card__row">
           <div className="checkout-delivery-card__shipping-wrap">
             <span className="checkout-delivery-card__label">Shipping Charges</span>
-            <div className="checkout-delivery-card__price-status">
-              {isFree ? (
-                <>
-                  <span className="checkout-delivery-card__free">✓ Free shipping applied</span>
-                  <p className="checkout-delivery-card__subtext checkout-delivery-card__subtext--success">
-                    This order qualifies for free delivery.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <span className="checkout-delivery-card__price">Shipping Charge: {formatCurrency(shipping)}</span>
-                  {remainingForFree > 0 && (
-                    <p className="checkout-delivery-card__subtext">
-                      Add <strong>{formatCurrency(remainingForFree)}</strong> more to unlock free delivery.
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-            {hasFreeDeliveryProduct && isFree && (
-              <p className="checkout-delivery-card__note">
-                (Unlocked by an eligible product in your cart)
-              </p>
+            
+            {isFree ? (
+              <div className="checkout-shipping-badge checkout-shipping-badge--free">
+                <span className="checkout-shipping-badge__text">✓ Free shipping applied</span>
+                {hasFreeDeliveryProduct && (
+                  <span className="checkout-shipping-badge__sub"> (Unlocked by an eligible product)</span>
+                )}
+              </div>
+            ) : (
+              <div className="checkout-shipping-badge checkout-shipping-badge--paid">
+                <span className="checkout-shipping-badge__text">
+                  Shipping Charge: <strong>{formatCurrency(shipping)}</strong>
+                </span>
+                {remainingForFree > 0 && (
+                  <span className="checkout-shipping-badge__sub">
+                    {' • '}Add <strong>{formatCurrency(remainingForFree)}</strong> more for free delivery
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>

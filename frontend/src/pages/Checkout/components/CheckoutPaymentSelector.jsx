@@ -44,6 +44,16 @@ export function CheckoutPaymentSelector({ selectedMethod, onChange }) {
               key={opt.id}
               className={`checkout-payment-selector__tile ${isSelected ? 'checkout-payment-selector__tile--selected' : ''} ${!opt.enabled ? 'checkout-payment-selector__tile--disabled' : ''}`}
               onClick={() => opt.enabled && onChange(opt.id)}
+              role="radio"
+              aria-checked={isSelected}
+              aria-disabled={!opt.enabled}
+              tabIndex={opt.enabled ? 0 : -1}
+              onKeyDown={(e) => {
+                if (opt.enabled && (e.key === ' ' || e.key === 'Enter')) {
+                  e.preventDefault();
+                  onChange(opt.id);
+                }
+              }}
             >
               <div className="checkout-payment-selector__icon-wrap">
                 <Icon size={20} className="checkout-payment-selector__icon" />

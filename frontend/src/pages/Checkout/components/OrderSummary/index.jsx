@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react';
 import { calculateShipping, calculateTotal } from '../../../../utils/pricing.js';
 import { formatCurrency } from '../../../../utils/formatters.js';
 import { ImageWithFallback } from '../../../../components/ui/ImageWithFallback/index.jsx';
@@ -122,7 +123,10 @@ export function OrderSummary({ items, subtotal, submitting, isValid }) {
         loading={submitting}
         disabled={!isValid || submitting}
       >
-        {buttonText}
+        <span className="order-summary__submit-btn-content">
+          {!submitting && <Lock size={16} className="order-summary__lock-icon" />}
+          <span>{buttonText}</span>
+        </span>
       </Button>
 
       {/* Trust badges bar embedded inside OrderSummary */}
