@@ -1,0 +1,43 @@
+.rating-summary-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  margin: 4px 0;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.rating-star {
+  color: #3b3d45; /* Dark grey for empty stars */
+  font-size: 14px;
+  line-height: 1;
+}
+
+.rating-star.filled {
+  color: #fbbf24; /* Warm yellow/amber for filled stars */
+}
+
+.rating-number {
+  font-weight: 700;
+  color: var(--text-main, #ffffff);
+  margin-left: 4px;
+}
+
+.rating-count-sep {
+  color: var(--text-muted, #8a8d93);
+}
+
+.rating-reviews-count {
+  color: var(--accent-color, #a855f7);
+  font-weight: 500;
+}
+
+.rating-no-ratings {
+  color: var(--text-muted, #8a8d93);
+  font-weight: 600;
+  font-size: 0.85rem;
+}

@@ -1,0 +1,88 @@
+.toast-container {
+  position: fixed;
+  top: calc(var(--header-height, 72px) + 16px);
+  right: var(--space-6);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none;
+  max-width: 360px;
+  width: calc(100vw - var(--space-12));
+}
+
+/* Individual toast */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-lg);
+  pointer-events: all;
+  animation: toast-in var(--duration-normal) var(--easing-spring) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.toast--success {
+  background: hsla(142, 30%, 10%, 0.95);
+  border-color: var(--color-status-success);
+  color: var(--color-status-success);
+}
+.toast--error {
+  background: hsla(0, 30%, 10%, 0.95);
+  border-color: var(--color-status-error);
+  color: var(--color-status-error);
+}
+.toast--warning {
+  background: hsla(38, 30%, 10%, 0.95);
+  border-color: var(--color-status-warning);
+  color: var(--color-status-warning);
+}
+.toast--info {
+  background: hsla(200, 30%, 10%, 0.95);
+  border-color: var(--color-status-info);
+  color: var(--color-status-info);
+}
+
+.toast__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.toast__message {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-snug);
+  color: var(--color-text-heading);
+}
+
+.toast__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--easing-out);
+}
+.toast__close:hover {
+  opacity: 1;
+  color: var(--color-text-heading);
+}

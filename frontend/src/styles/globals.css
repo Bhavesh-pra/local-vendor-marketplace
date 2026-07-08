@@ -1,0 +1,108 @@
+/* ==========================================================================
+   Global Styles — ShopCart
+   ========================================================================== */
+
+body {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-body);
+  background-color: var(--color-surface-base);
+  line-height: var(--line-height-normal);
+}
+
+/* Heading defaults — :where() has zero specificity so any component rule wins.
+   Components that render headings (ProductCard h2, etc.) just declare their
+   own font-size without needing !important. */
+:where(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-text-heading);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-bold);
+}
+:where(h1) { font-size: var(--font-size-3xl); }
+:where(h2) { font-size: var(--font-size-2xl); }
+:where(h3) { font-size: var(--font-size-xl); }
+:where(h4) { font-size: var(--font-size-lg); }
+:where(h5) { font-size: var(--font-size-base); }
+:where(h6) { font-size: var(--font-size-sm); }
+
+/* Links */
+a {
+  color: var(--color-text-brand);
+  transition: color var(--duration-fast) var(--easing-out);
+}
+a:hover {
+  color: var(--color-text-heading);
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+}
+
+@media (max-width: 639px) {
+  .container {
+    padding-inline: var(--space-4);
+  }
+}
+
+/* Section spacing */
+.section {
+  padding-block: var(--space-12);
+}
+
+/* Visually hidden (accessible) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin-block: var(--space-4);
+}
+
+/* Generic card surface */
+.card {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-primary) 0%,
+    var(--color-brand-secondary) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Prevent layout shifting when scrollbars toggle or modal sheets open */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Force dark-mode dropdown options to render legibly across browsers */
+select, option {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-heading);
+}

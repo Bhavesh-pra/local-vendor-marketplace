@@ -1,0 +1,48 @@
+/* ProductCardSkeleton — mirrors new ProductCard layout exactly */
+.product-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  height: 350px; /* matches desktop card height */
+  max-width: 270px;
+  min-width: 220px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.product-card-skeleton__image-wrap {
+  height: 160px;
+  overflow: hidden;
+  background: var(--color-surface-elevated);
+  padding: var(--space-4);
+}
+
+.product-card-skeleton__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  flex: 1;
+}
+
+@media (max-width: 1099px) and (min-width: 768px) {
+  .product-card-skeleton {
+    height: 330px;
+  }
+  .product-card-skeleton__image-wrap {
+    height: 140px;
+  }
+}
+
+@media (max-width: 767px) {
+  .product-card-skeleton {
+    height: 290px;
+  }
+  .product-card-skeleton__image-wrap {
+    height: 120px;
+    padding: var(--space-2);
+  }
+}

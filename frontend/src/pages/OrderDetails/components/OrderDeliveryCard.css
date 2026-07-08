@@ -1,0 +1,71 @@
+.order-delivery-card {
+  background: var(--color-surface-raised, #16181f);
+  border: 1px solid var(--color-border-subtle, #2d3139);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.order-delivery-card--cancelled {
+  border-color: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.01);
+}
+
+.order-delivery-card--delivered {
+  border-color: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.01);
+}
+
+.order-delivery-card__icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-surface-base, #111317);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-brand-primary, #6366f1);
+}
+
+.order-delivery-card--cancelled .order-delivery-card__icon-wrap {
+  color: var(--color-status-error, #ef4444);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.order-delivery-card--delivered .order-delivery-card__icon-wrap {
+  color: var(--color-status-success, #10b981);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.order-delivery-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-delivery-card__label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.order-delivery-card__date {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-heading);
+  margin: 0;
+}
+
+.order-delivery-card--cancelled .order-delivery-card__date {
+  color: var(--color-status-error, #ef4444);
+}
+
+.order-delivery-card--delivered .order-delivery-card__date {
+  color: var(--color-status-success, #10b981);
+}

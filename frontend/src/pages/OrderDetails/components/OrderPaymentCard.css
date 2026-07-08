@@ -1,0 +1,88 @@
+.order-payment-card {
+  background: var(--color-surface-raised, #16181f);
+  border: 1px solid var(--color-border-subtle, #2d3139);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.order-payment-card__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.order-payment-card__section--notes {
+  border-top: 1px dashed var(--color-border-subtle);
+  padding-top: var(--space-4);
+}
+
+.order-payment-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.order-payment-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.order-payment-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+
+.order-payment-card__label {
+  color: var(--color-text-muted);
+}
+
+.order-payment-card__value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+}
+
+/* Payment Status Tags */
+.payment-status-tag {
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.payment-status-tag--paid {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--color-status-success, #10b981);
+}
+
+.payment-status-tag--pending {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--color-status-warning, #f59e0b);
+}
+
+.payment-status-tag--failed {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-status-error, #ef4444);
+}
+
+.order-payment-card__notes-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+  font-style: italic;
+  margin: 0;
+  line-height: var(--line-height-base);
+}

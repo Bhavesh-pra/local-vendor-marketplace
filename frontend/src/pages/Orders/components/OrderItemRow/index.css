@@ -1,0 +1,99 @@
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.order-item-row__image-link {
+  flex-shrink: 0;
+  display: block;
+}
+
+.order-item-row__image-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  overflow: hidden;
+  background: var(--color-surface-elevated);
+}
+
+.order-item-row__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.order-item-row__details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.order-item-row__name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.order-item-row__name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+  line-height: var(--line-height-snug);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.order-item-row__name-link:hover .order-item-row__name {
+  color: var(--color-text-brand);
+}
+
+.order-item-row__price-qty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.order-item-row__divider-dot {
+  font-weight: bold;
+  color: var(--color-text-muted);
+}
+
+.order-item-row__total {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+}
+
+/* ── Mobile responsive overrides ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .order-item-row {
+    gap: var(--space-3);
+  }
+  .order-item-row__image-wrap {
+    width: 44px;
+    height: 44px;
+  }
+  .order-item-row__name {
+    font-size: var(--font-size-sm);
+  }
+  .order-item-row__price-qty {
+    font-size: var(--font-size-xs);
+  }
+  .order-item-row__total {
+    font-size: var(--font-size-sm);
+  }
+}

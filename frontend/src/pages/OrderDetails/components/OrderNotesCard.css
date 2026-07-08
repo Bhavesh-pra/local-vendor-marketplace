@@ -1,0 +1,28 @@
+.order-notes-card {
+  background: var(--color-surface-raised, #16181f);
+  border: 1px solid var(--color-border-subtle, #2d3139);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  width: 100%;
+}
+
+.order-notes-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.order-notes-card__content {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+  line-height: var(--line-height-base);
+  margin: 0;
+}

@@ -1,0 +1,96 @@
+/* ProductGrid — 2 / 3 / 5 / 6 density breakpoints */
+.product-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* mobile: 2 cards */
+}
+
+.product-grid > * {
+  align-self: start;
+}
+
+@media (min-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* tablet: 3 cards */
+  }
+}
+
+@media (min-width: 1100px) {
+  .product-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)); /* laptop: 5 cards */
+  }
+}
+
+@media (min-width: 1600px) {
+  .product-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)); /* desktop: 6 cards */
+  }
+}
+
+/* ── Actionable Empty State ────────────────────────────── */
+.product-grid-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  gap: var(--space-3);
+  min-height: 320px;
+}
+
+.product-grid-empty__icon {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.product-grid-empty__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+  margin: 0;
+}
+
+.product-grid-empty__body {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.product-grid-empty__tips {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.product-grid-empty__tips li::before {
+  content: '→ ';
+  color: var(--color-text-brand);
+}
+
+.product-grid-empty__clear-btn {
+  margin-top: var(--space-2);
+  background: transparent;
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color 200ms var(--easing-out),
+    color 200ms var(--easing-out),
+    background 200ms var(--easing-out);
+}
+
+.product-grid-empty__clear-btn:hover {
+  border-color: var(--color-text-brand);
+  color: var(--color-text-brand);
+  background: rgba(234, 179, 8, 0.04);
+}

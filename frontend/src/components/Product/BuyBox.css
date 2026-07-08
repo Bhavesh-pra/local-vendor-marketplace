@@ -1,0 +1,178 @@
+.buy-box-container {
+  padding: 12px; /* Compressed padding */
+  background: var(--bg-card, #1e2028);
+  border: 1px solid var(--border-color, #2d3139);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Compressed gap */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  position: sticky;
+  top: 24px;
+  width: 100%;
+}
+
+/* Delivery row directly below price */
+.buy-box-delivery-row {
+  display: flex;
+  align-items: center;
+  margin-top: -6px; /* pull closer to PriceBox */
+  margin-bottom: 2px;
+}
+
+.free-delivery-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #10b981; /* Emerald green */
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  letter-spacing: 0.2px;
+}
+
+/* Qty stepper */
+.buy-box-qty-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted, #8a8d93);
+}
+
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color, #2d3139);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.qty-step-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main, #ffffff);
+  width: 28px;
+  height: 28px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 100ms;
+}
+
+.qty-step-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.qty-step-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qty-current-val {
+  width: 32px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-main, #ffffff);
+}
+
+/* Stock status (directly above actions stack) */
+.buy-box-stock-status {
+  margin: 2px 0;
+}
+
+.stock-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.stock-badge.low-stock {
+  color: #f59e0b; /* warning color */
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.stock-badge.limited-stock {
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.stock-badge.out-of-stock {
+  color: #ef4444; /* danger color */
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Actions Stack (Add to Cart, Buy Now, Wishlist stacked vertically) */
+.buy-box-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.buy-box-btn {
+  width: 100%;
+  height: 38px;
+  min-height: 38px;
+  padding: 6px 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
+}
+
+.buy-box-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-to-cart-btn {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main, #ffffff);
+  border: 1px solid var(--border-color, #2d3139);
+}
+
+.add-to-cart-btn:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.08);
+  border-color: var(--accent-color, #a855f7);
+}
+
+.buy-now-btn {
+  background: var(--accent-color, #a855f7);
+  color: #ffffff;
+}
+
+.buy-now-btn:hover:not(:disabled) {
+  background: var(--accent-color-hover, #c084fc);
+}
+
+.wishlist-btn-flat {
+  background: transparent;
+  color: var(--text-muted, #8a8d93);
+  border: 1px solid var(--border-color, #2d3139);
+}
+
+.wishlist-btn-flat:hover {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-main, #ffffff);
+  border-color: var(--text-muted, #8a8d93);
+}

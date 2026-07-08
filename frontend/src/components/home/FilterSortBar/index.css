@@ -1,0 +1,49 @@
+/* FilterSortBar */
+.filter-sort-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.filter-sort-bar__count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.filter-sort-bar__sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-sort-bar__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.filter-sort-bar__select {
+  height: 36px;
+  padding-inline: var(--space-3) var(--space-8);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  color: var(--color-text-heading);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  transition:
+    border-color var(--duration-fast) var(--easing-out),
+    box-shadow   var(--duration-fast) var(--easing-out);
+}
+.filter-sort-bar__select:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px hsla(243, 75%, 59%, 0.2);
+}

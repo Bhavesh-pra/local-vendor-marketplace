@@ -1,0 +1,200 @@
+/* ── Reviews Section ──────────────────────────────────────── */
+.reviews-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 16px;
+  margin-top: 16px;
+  max-width: 800px;
+  width: 100%;
+}
+
+/* ── Header Row (title + sort) ─── */
+.reviews-section__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  max-width: 800px;
+}
+
+.reviews-section__title {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-heading);
+  margin: 0;
+}
+
+/* ── Sort Controls ─── */
+.reviews-section__sort-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reviews-section__sort-label {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.reviews-section__sort-select {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  font-size: 0.82rem;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 100ms ease;
+}
+
+.reviews-section__sort-select:hover,
+.reviews-section__sort-select:focus {
+  border-color: var(--color-border-strong);
+}
+
+/* ── Review List ─── */
+.reviews-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reviews-section__item {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 800px; /* Option A - limit card width */
+  transition: border-color 120ms var(--easing-out);
+}
+
+.reviews-section__item:hover {
+  border-color: var(--color-border-default);
+}
+
+.reviews-section__item-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reviews-section__user-info-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.reviews-section__username {
+  font-size: 0.88rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+}
+
+.reviews-section__date {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Verified Badge ─── */
+.reviews-section__verified-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+.reviews-section__comment {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--color-text-body);
+  white-space: pre-line;
+  margin: 0;
+}
+
+.reviews-section__comment-expand-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-brand);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: 0;
+  margin-left: var(--space-1);
+  text-decoration: underline;
+}
+
+.reviews-section__comment-expand-btn:hover {
+  color: var(--color-text-heading);
+}
+
+/* ── Item Footer (helpful button) ─── */
+.reviews-section__item-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reviews-section__helpful-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.reviews-section__helpful-btn:hover {
+  border-color: var(--color-border-default);
+  color: var(--color-text-body);
+}
+
+.reviews-section__helpful-btn--active {
+  border-color: #22c55e;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.helpful-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Skeletons ─── */
+.reviews-section__item-skeleton {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 800px;
+}
+
+.reviews-section__item-header-skeleton {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

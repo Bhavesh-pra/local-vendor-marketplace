@@ -1,0 +1,383 @@
+/* ── Inventory Page Layout ─────────────────────────────────────────────── */
+.inventory-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Valuation / Stats Section ────────────────────────────────────────── */
+.inventory-page__valuation {
+  margin-bottom: 8px;
+}
+
+.inventory-page__val-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* ── Tabs Navigation ───────────────────────────────────────────────────── */
+.inventory-page__tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 2px;
+}
+
+.inventory-page__tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.inventory-page__tab:hover {
+  color: var(--color-text);
+  background: var(--color-bg-hover);
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
+}
+
+.inventory-page__tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.inventory-page__tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--color-danger);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  margin-left: 4px;
+}
+
+/* ── Toolbars and Filtering ────────────────────────────────────────────── */
+.inventory-page__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .inventory-page__toolbar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.inventory-page__search {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.inventory-page__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.inventory-page__search .ap-input {
+  padding-left: 38px;
+  width: 100%;
+}
+
+.inventory-page__filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inventory-page__count {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Table Styling overrides ───────────────────────────────────────────── */
+.inventory-page__sku {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 13px;
+}
+
+.inventory-page__prod-name {
+  font-weight: 500;
+  color: var(--color-text);
+  margin-top: 2px;
+}
+
+.inventory-page__cat {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-border);
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.inventory-page__override-tag {
+  font-size: 9px;
+  background: hsla(243, 75%, 65%, 0.15);
+  color: hsl(243, 75%, 70%);
+  border: 1px solid hsla(243, 75%, 65%, 0.3);
+  padding: 0px 4px;
+  border-radius: 3px;
+  margin-left: 6px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Stock status levels */
+.inventory-page__stock-qty {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.qty--ok {
+  color: var(--color-success);
+}
+
+.qty--low {
+  color: var(--color-warning);
+}
+
+.qty--out {
+  color: var(--color-danger);
+}
+
+.inventory-page__stock-badge {
+  font-size: 11px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.inventory-page__stock-status--ok {
+  color: var(--color-success);
+}
+
+.inventory-page__stock-status--low {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.inventory-page__stock-status--out {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* ── Sections Descriptions ─────────────────────────────────────────────── */
+.inventory-page__sec-desc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+}
+
+/* ── Stock Alerts List ─────────────────────────────────────────────────── */
+.inventory-page__alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inventory-page__alert-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-md);
+  border-left: 4px solid transparent;
+}
+
+@media (min-width: 768px) {
+  .inventory-page__alert-item {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.alert-border--critical {
+  border-left-color: var(--color-danger);
+  background: hsla(0, 80%, 62%, 0.03);
+}
+
+.alert-border--warning {
+  border-left-color: var(--color-warning);
+  background: hsla(38, 88%, 52%, 0.03);
+}
+
+.alert-border--info {
+  border-left-color: var(--color-primary);
+  background: hsla(243, 75%, 65%, 0.03);
+}
+
+.inventory-page__alert-main {
+  display: flex;
+  gap: 16px;
+}
+
+.inventory-page__alert-icon {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+.inventory-page__alert-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inventory-page__alert-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.inventory-page__alert-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  align-items: center;
+}
+
+.bullet-sep {
+  opacity: 0.5;
+}
+
+.inventory-page__alert-actions {
+  display: flex;
+  gap: 8px;
+  align-self: flex-end;
+}
+
+@media (min-width: 768px) {
+  .inventory-page__alert-actions {
+    align-self: center;
+  }
+}
+
+/* ── Stock Movements history ledger ────────────────────────────────────── */
+.inventory-page__ledger-change {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.ledger--plus {
+  color: var(--color-success);
+  background: hsla(162, 73%, 46%, 0.1);
+}
+
+.ledger--minus {
+  color: var(--color-danger);
+  background: hsla(0, 80%, 62%, 0.1);
+}
+
+/* ── Stock Adjustment Modal ────────────────────────────────────────────── */
+.inventory-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.inventory-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.inventory-modal__card {
+  position: relative;
+  z-index: 1001;
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+.inventory-modal__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.inventory-modal__subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inventory-page__form-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.inventory-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

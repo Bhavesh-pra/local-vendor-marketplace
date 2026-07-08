@@ -1,0 +1,103 @@
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-block: var(--space-12) var(--space-16);
+  min-height: calc(100vh - var(--header-height) - 100px);
+}
+
+.login-page__card {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.login-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.login-page__title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-heading);
+}
+
+.login-page__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.login-page__error-banner {
+  background: var(--color-status-error-bg);
+  border: 1px solid var(--color-status-error);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+}
+
+.login-page__error-message {
+  font-size: var(--font-size-sm);
+  color: var(--color-status-error);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+}
+
+.login-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.login-page__submit-btn {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.login-page__footer {
+  text-align: center;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-4);
+}
+
+.login-page__footer-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+}
+
+.login-page__link {
+  color: var(--color-brand-secondary);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.login-page__link:hover {
+  color: var(--color-brand-primary);
+  text-decoration: underline;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-page {
+    padding-block: var(--space-6) var(--space-8);
+  }
+  .login-page__card {
+    padding: var(--space-6);
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+}

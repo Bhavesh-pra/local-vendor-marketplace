@@ -1,0 +1,25 @@
+.recently-viewed-section {
+  margin: 28px 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color, #2d3139);
+}
+
+.recently-viewed-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main, #ffffff);
+  margin-bottom: 12px;
+}
+
+.recently-viewed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 576px) {
+  .recently-viewed-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}

@@ -1,0 +1,60 @@
+.order-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px var(--space-3);
+  border-radius: var(--radius-full, 9999px);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  width: fit-content;
+  user-select: none;
+}
+
+.order-status-badge__icon {
+  flex-shrink: 0;
+}
+
+/* Status variants matching dark theme */
+.order-status-badge--pending {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.15);
+  color: var(--color-status-warning, #f59e0b);
+}
+
+.order-status-badge--confirmed {
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.order-status-badge--processing {
+  background: rgba(168, 85, 247, 0.05);
+  border-color: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.order-status-badge--shipped {
+  background: rgba(249, 115, 22, 0.05);
+  border-color: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.order-status-badge--delivered {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.15);
+  color: var(--color-status-success, #10b981);
+}
+
+.order-status-badge--cancelled {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.15);
+  color: var(--color-status-error, #ef4444);
+}
+
+.order-status-badge--returned {
+  background: rgba(107, 114, 128, 0.05);
+  border-color: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}

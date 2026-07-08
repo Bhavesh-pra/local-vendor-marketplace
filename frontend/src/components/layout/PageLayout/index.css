@@ -1,0 +1,5 @@
+/* PageLayout */
+.page-layout__main {
+  min-height: calc(100vh - var(--header-height));
+  padding-block-end: var(--space-16);
+}

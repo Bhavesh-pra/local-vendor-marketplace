@@ -1,0 +1,64 @@
+.order-address-card {
+  background: var(--color-surface-raised, #16181f);
+  border: 1px solid var(--color-border-subtle, #2d3139);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  height: 100%;
+}
+
+.order-address-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.order-address-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.order-address-card__name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-heading);
+  margin: 0;
+}
+
+.order-address-card__address {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+  line-height: var(--line-height-base);
+  margin: 0;
+  white-space: pre-line;
+}
+
+.order-address-card__contact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-3);
+}
+
+.order-address-card__contact-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.order-address-card__contact-icon {
+  color: var(--color-brand-primary, #6366f1);
+  flex-shrink: 0;
+}

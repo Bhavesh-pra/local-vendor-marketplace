@@ -1,0 +1,49 @@
+.review-form {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl); /* Standardized card border radius 16px */
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: 48px; /* Standardized whitespace gap */
+}
+
+.review-form__title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-heading);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.review-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.review-form__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+}
+
+.review-form__error {
+  font-size: var(--font-size-xs);
+  color: var(--color-status-error);
+  font-weight: var(--font-weight-medium);
+}
+
+.review-form__submit {
+  align-self: flex-start;
+  min-width: 140px;
+  border-radius: 10px !important; /* Standardized button border radius */
+}
+
+/* Override input and textarea border radius inside form to match 12px target */
+.review-form input,
+.review-form textarea {
+  border-radius: 12px !important;
+}

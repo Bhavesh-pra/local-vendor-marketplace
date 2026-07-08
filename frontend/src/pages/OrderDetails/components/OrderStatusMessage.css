@@ -1,0 +1,64 @@
+.order-status-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  border-left-width: 2px;
+  width: 100%;
+}
+
+.order-status-message__icon {
+  flex-shrink: 0;
+}
+
+.order-status-message__text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-body);
+  line-height: var(--line-height-snug);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Status themes (softer backgrounds) */
+.order-status-message--pending {
+  background: rgba(245, 158, 11, 0.015);
+  border-color: rgba(245, 158, 11, 0.08);
+  border-left-color: var(--color-status-warning, #f59e0b);
+  color: var(--color-status-warning, #f59e0b);
+}
+
+.order-status-message--processing {
+  background: rgba(168, 85, 247, 0.015);
+  border-color: rgba(168, 85, 247, 0.08);
+  border-left-color: #a855f7;
+  color: #a855f7;
+}
+
+.order-status-message--shipped {
+  background: rgba(249, 115, 22, 0.015);
+  border-color: rgba(249, 115, 22, 0.08);
+  border-left-color: #f97316;
+  color: #f97316;
+}
+
+.order-status-message--delivered {
+  background: rgba(16, 185, 129, 0.015);
+  border-color: rgba(16, 185, 129, 0.08);
+  border-left-color: var(--color-status-success, #10b981);
+  color: var(--color-status-success, #10b981);
+}
+
+.order-status-message--cancelled {
+  background: rgba(239, 68, 68, 0.015);
+  border-color: rgba(239, 68, 68, 0.08);
+  border-left-color: var(--color-status-error, #ef4444);
+  color: var(--color-status-error, #ef4444);
+}
+
+.order-status-message--returned {
+  background: rgba(107, 114, 128, 0.015);
+  border-color: rgba(107, 114, 128, 0.08);
+  border-left-color: #9ca3af;
+  color: #9ca3af;
+}

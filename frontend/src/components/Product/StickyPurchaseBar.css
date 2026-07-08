@@ -1,0 +1,112 @@
+.sticky-purchase-bar-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-card, #1e2028);
+  border-top: 1px solid var(--border-color, #2d3139);
+  padding: 12px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: none; /* Hidden by default (desktop) */
+}
+
+.sticky-purchase-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+.sticky-bar-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.sticky-bar-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main, #ffffff);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sticky-bar-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.sticky-bar-price {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-main, #ffffff);
+}
+
+.sticky-bar-variant {
+  font-size: 0.72rem;
+  color: var(--text-muted, #8a8d93);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #2d3139);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.sticky-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sticky-action-btn {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.sticky-action-btn.primary {
+  background: var(--accent-color, #a855f7);
+  color: #ffffff;
+}
+
+.sticky-action-btn.primary:hover:not(:disabled) {
+  background: var(--accent-color-hover, #c084fc);
+}
+
+.sticky-action-btn.secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main, #ffffff);
+  border: 1px solid var(--border-color, #2d3139);
+}
+
+.sticky-action-btn.secondary:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.08);
+  border-color: var(--accent-color, #a855f7);
+}
+
+.sticky-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Show on mobile viewports */
+@media (max-width: 768px) {
+  .sticky-purchase-bar-wrapper {
+    display: block;
+  }
+}

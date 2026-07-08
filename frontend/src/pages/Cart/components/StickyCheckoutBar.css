@@ -1,0 +1,54 @@
+.sticky-checkout-bar {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .sticky-checkout-bar {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-surface-raised);
+    border-top: 1px solid var(--color-border-default);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+    padding: var(--space-3) var(--space-4);
+    z-index: 999;
+  }
+
+  .sticky-checkout-bar__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .sticky-checkout-bar__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sticky-checkout-bar__label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .sticky-checkout-bar__value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-brand);
+  }
+
+  .sticky-checkout-bar__btn {
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    padding: var(--space-2) var(--space-6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}

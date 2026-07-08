@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Orders Center Page — ShopCart Admin
+   ========================================================================== */
+
+.orders-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Tabs styles */
+.orders-page__tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  border-bottom: 1px solid hsl(220, 18%, 13%);
+  margin-bottom: 8px;
+}
+
+.orders-page__tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: hsla(220, 18%, 10%, 0.4);
+  border: 1px solid hsl(220, 18%, 13%);
+  color: var(--color-text-muted);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.orders-page__tab:hover {
+  background: hsl(220, 18%, 13%);
+  color: var(--color-text);
+}
+
+.orders-page__tab--active {
+  background: hsl(243, 75%, 65%);
+  border-color: hsl(243, 75%, 70%);
+  color: #fff;
+}
+
+.orders-page__tab--active:hover {
+  background: hsl(243, 75%, 70%);
+  color: #fff;
+}
+
+.orders-page__tab-badge {
+  font-size: 0.6875rem;
+  background: hsla(0, 0%, 100%, 0.15);
+  color: inherit;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Toolbar styling */
+.orders-page__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.orders-page__search-wrap {
+  position: relative;
+  max-width: 320px;
+  width: 100%;
+}
+
+.orders-page__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.orders-page__search-wrap .ap-input {
+  padding-left: 36px;
+}
+
+.orders-page__filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-grow: 1;
+  justify-content: flex-end;
+}
+
+/* Date selectors layout */
+.orders-page__date-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.orders-page__date-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.orders-page__date-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.orders-page__date-input-wrap .ap-input {
+  padding-left: 30px;
+  font-size: 0.75rem;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  width: 124px;
+  height: 34px;
+}
+
+.orders-page__count {
+  font-size: 0.775rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Mobile responsive card layouts */
+.orders-page__mobile-list {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.orders-page__mobile-card {
+  background: hsla(220, 18%, 10%, 0.4);
+  border: 1px solid hsl(220, 18%, 13%);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.orders-page__m-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid hsl(220, 18%, 13%);
+  padding-bottom: 10px;
+}
+
+.orders-page__m-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orders-page__m-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.orders-page__m-label {
+  color: var(--color-text-muted);
+}
+
+.orders-page__m-val {
+  color: var(--color-text);
+  font-weight: 500;
+  text-align: right;
+}
+
+.orders-page__m-card-actions {
+  border-top: 1px solid hsl(220, 18%, 13%);
+  padding-top: 10px;
+}
+
+/* Layout media queries switching views */
+@media (max-width: 900px) {
+  .orders-page__filters {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .orders-page__desktop-table {
+    display: none;
+  }
+  .orders-page__mobile-list {
+    display: flex;
+  }
+  .orders-page__search-wrap {
+    max-width: none;
+  }
+  .orders-page__date-filters {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .orders-page__date-input-wrap,
+  .orders-page__date-input-wrap .ap-input {
+    width: 46%;
+  }
+}

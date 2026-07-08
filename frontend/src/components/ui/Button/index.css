@@ -1,0 +1,112 @@
+/* Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  position: relative;
+  border: none;
+  border-radius: 10px; /* Standardized border radius */
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 48px; /* Standardized height */
+  padding-inline: var(--space-4);
+  transition:
+    background-color var(--duration-fast) var(--easing-out),
+    color            var(--duration-fast) var(--easing-out),
+    box-shadow       var(--duration-fast) var(--easing-out),
+    transform        var(--duration-fast) var(--easing-out);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Sizes */
+.btn--sm {
+  font-size: var(--font-size-sm);
+  padding-inline: var(--space-3);
+  min-height: 36px;
+}
+.btn--md {
+  font-size: var(--font-size-base);
+  padding-inline: var(--space-4);
+  min-height: 48px;
+}
+.btn--lg {
+  font-size: var(--font-size-lg);
+  padding-inline: var(--space-6);
+  min-height: 48px; /* Normalized to 48px target */
+}
+
+/* Variants */
+.btn--primary {
+  background: var(--color-brand-primary);
+  color: #fff;
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-brand-primary-hover);
+  box-shadow: var(--shadow-brand);
+}
+
+.btn--secondary {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-heading);
+  border: 1px solid var(--color-border-default);
+}
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+}
+
+.btn--outline {
+  background: transparent;
+  color: var(--color-brand-primary);
+  border: 1.5px solid var(--color-brand-primary);
+}
+.btn--outline:hover:not(:disabled) {
+  background: var(--color-brand-primary-muted);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text-body);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-heading);
+}
+
+.btn--danger {
+  background: var(--color-status-error);
+  color: #fff;
+}
+.btn--danger:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+/* Disabled / loading */
+.btn:disabled,
+.btn--loading {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.btn--loading {
+  pointer-events: none;
+}
+
+/* Loading layout */
+.btn__spinner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn__label {
+  display: contents;
+}
+.btn__label--hidden {
+  visibility: hidden;
+}

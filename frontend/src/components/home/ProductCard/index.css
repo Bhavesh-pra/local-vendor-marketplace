@@ -1,0 +1,324 @@
+/* ── Product Card — Standing Rectangle Template ───────────── */
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px; /* round corners mirroring sample */
+  overflow: hidden;
+  height: 350px; /* fixed vertical standing rectangle height */
+  max-width: 270px; /* slightly wider default */
+  min-width: 220px;
+  width: 100%;
+  margin-inline: auto;
+  transition:
+    transform   120ms var(--easing-out),
+    box-shadow  120ms var(--easing-out),
+    border-color 120ms var(--easing-out);
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-default);
+}
+
+/* ── Badge Overlay ───────────────────────────────────────── */
+.product-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.product-card__badge--bestseller {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.product-card__badge--sale,
+.product-card__badge--limited-stock {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.product-card__badge--new {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+/* ── Wishlist Button (Circular Top Right) ────────────────── */
+.product-card__wishlist-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(10, 15, 25, 0.45);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.product-card__wishlist-btn:hover {
+  background: rgba(10, 15, 25, 0.7);
+  transform: scale(1.05);
+}
+
+.product-card__wishlist-btn .heart-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ── Image Wrapper with Gradient/Padding ────────────────── */
+.product-card__image-link {
+  display: block;
+  text-decoration: none;
+}
+
+.product-card__image-wrap {
+  height: 135px; /* Reduced from 160px to gain space for metadata */
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--color-surface-elevated) 0%, rgba(10, 15, 25, 0.05) 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+}
+
+.product-card__image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transition: transform 120ms var(--easing-out);
+}
+
+.product-card:hover .product-card__image {
+  transform: scale(1.03);
+}
+
+/* ── Body ────────────────────────────────────────────────── */
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Reduced from 6px */
+  padding: 10px 12px; /* Compressed padding */
+  flex: 1;
+}
+
+/* ── Product Title ────────────────────────────────────────── */
+.product-card__name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-card__name {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--color-text-heading);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 1.25rem;
+  transition: color 120ms var(--easing-out);
+  margin: 0;
+}
+
+.product-card__name-link:hover .product-card__name {
+  color: var(--color-text-brand);
+}
+
+/* ── Price and Meta Rows ────────────────────────────────── */
+.product-card__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+.price-current {
+  font-size: 1.16rem; /* Increased ~10% from 1.05rem */
+  font-weight: 800;
+  color: var(--color-text-heading);
+}
+
+.price-discount {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #22c55e;
+  margin-left: 2px;
+}
+
+.product-card__rating-row {
+  display: flex;
+  align-items: center;
+}
+
+.product-card__rating {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f59e0b; /* Yellow rating star */
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.product-card__delivery-row {
+  display: flex;
+  align-items: center;
+}
+
+.free-delivery-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* ── Description ─────────────────────────────────────────── */
+.product-card__description {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 2.0rem;
+  margin: 2px 0 0 0;
+}
+
+/* ── Stock Urgency (above button) ── */
+.product-card__stock-row {
+  display: flex;
+  align-items: center;
+  margin-top: auto; /* Push stock and button to bottom */
+  padding-bottom: 2px;
+}
+
+.product-card__stock {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.product-card__stock--low {
+  color: var(--color-status-warning);
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.product-card__stock--oos {
+  color: var(--color-status-error);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ── Stretched Link for Card Clickability ─── */
+.stretched-link::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  content: "";
+}
+
+/* ── CTA Button ─── */
+.product-card__cta-block {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+}
+
+/* If there is no stock row, we want the CTA block itself to push to the bottom */
+.product-card__stock-row ~ .product-card__cta-block {
+  margin-top: 0;
+}
+
+.product-card__cta-block:first-of-type,
+.product-card__body > .product-card__cta-block {
+  margin-top: auto;
+}
+
+.product-card__cta-block .btn {
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  padding-inline: var(--space-4);
+  font-size: 0.78rem;
+  border-radius: 8px;
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  transition: background-color 100ms ease, border-color 100ms ease, transform 100ms ease;
+}
+
+/* ── Breakpoints ─────────────────────────────────────────── */
+@media (max-width: 1099px) and (min-width: 768px) {
+  .product-card {
+    height: 330px;
+  }
+  .product-card__image-wrap {
+    height: 115px; /* Reduced from 140px */
+  }
+  .product-card__body {
+    padding: 8px 10px;
+    gap: 3px;
+  }
+}
+
+@media (max-width: 767px) {
+  .product-card {
+    height: 290px;
+  }
+  .product-card__image-wrap {
+    height: 95px; /* Reduced from 120px */
+    padding: var(--space-2);
+  }
+  .product-card__body {
+    padding: 6px 8px;
+    gap: 3px;
+  }
+  .product-card__name {
+    font-size: 0.86rem;
+    height: 1.1rem;
+  }
+  .product-card__description {
+    font-size: 0.7rem;
+    height: 1.8rem;
+  }
+  .product-card__footer-row {
+    padding-top: 2px;
+  }
+  .price-current {
+    font-size: 0.94rem;
+  }
+  .product-card__cta-block .btn {
+    height: 28px;
+    min-height: 28px;
+    padding-inline: var(--space-3);
+    font-size: 0.72rem;
+  }
+}

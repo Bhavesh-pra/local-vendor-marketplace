@@ -1,0 +1,29 @@
+.price-box-container {
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.price-selling {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-main, #ffffff);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.price-mrp {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-muted, #8a8d93);
+  text-decoration: line-through;
+  line-height: 1.2;
+}
+
+.price-discount {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #10b981; /* Compact Emerald Green text */
+  line-height: 1.2;
+}

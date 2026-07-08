@@ -1,0 +1,132 @@
+.product-details-page {
+  padding-top: 20px;
+  padding-bottom: 72px; /* Spacing for mobile sticky bottom bar */
+  max-width: 1500px;
+  margin-inline: auto;
+}
+
+.product-details-page__error {
+  padding: 48px 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* Loading State */
+.product-details-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 0;
+  color: var(--text-muted, #8a8d93);
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(168, 85, 247, 0.1);
+  border-top-color: var(--accent-color, #a855f7);
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* Details Grid */
+.product-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+
+.product-details-col-left {
+  width: 100%;
+}
+
+.product-details-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Meta Headers */
+.product-meta-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-brand-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-color, #a855f7);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Share button sits inline with rating — not as a standalone block */
+.meta-rating-share {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.product-title-text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text-main, #ffffff);
+  margin: 0;
+}
+
+.product-short-desc {
+  font-size: 0.94rem;
+  line-height: 1.45;
+  color: var(--text-muted, #8a8d93);
+  margin: 8px 0 0 0;
+}
+
+.product-details-page__reviews {
+  margin-top: 24px;
+}
+
+/* Tablet & Desktop Layouts */
+@media (min-width: 768px) {
+  .product-details-grid {
+    grid-template-columns: 1fr 1fr; /* Equal split */
+    gap: 24px;
+  }
+  .product-title-text {
+    font-size: 1.875rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .product-details-grid {
+    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+    gap: 24px;
+  }
+  .product-details-col-right {
+    gap: 12px;
+  }
+  .product-details-page {
+    padding-bottom: 56px; /* Default padding since bottom bar is hidden */
+  }
+  .product-title-text {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+}
+
+@media (min-width: 1400px) {
+  .product-details-grid {
+    gap: 32px;
+  }
+}
