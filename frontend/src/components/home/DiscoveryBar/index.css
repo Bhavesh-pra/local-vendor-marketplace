@@ -246,6 +246,24 @@
 }
 
 /* Mobile scaling styles */
+@media (max-width: 767px) {
+  .discovery-bar__sort-select {
+    height: 44px;
+  }
+  .discovery-bar__toggle-sidebar-btn {
+    height: 44px;
+    width: 44px;
+  }
+  .discovery-bar__search-clear {
+    width: 44px;
+    height: 44px;
+    right: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 639px) {
   .discovery-bar {
     margin-top: var(--space-4); /* Subtle top margin below Hero on mobile */
@@ -264,7 +282,7 @@
     width: clamp(130px, 32vw, 180px); /* Slightly narrower sort select on mobile */
   }
   .discovery-bar__sort-select {
-    height: 40px;
+    height: 44px;
     font-size: var(--font-size-xs);
     padding-inline: var(--space-2) var(--space-6);
     border-radius: 10px;
@@ -279,7 +297,12 @@
     right: var(--space-2);
   }
   .discovery-bar__search-clear {
-    right: var(--space-3);
+    right: 2px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -337,8 +360,8 @@
 
 @media (max-width: 639px) {
   .discovery-bar__toggle-sidebar-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
   }
 }

@@ -292,6 +292,7 @@
 @media (max-width: 767px) {
   .product-card {
     height: 290px;
+    min-width: 0;
   }
   .product-card__image-wrap {
     height: 95px; /* Reduced from 120px */
@@ -316,9 +317,17 @@
     font-size: 0.94rem;
   }
   .product-card__cta-block .btn {
-    height: 28px;
-    min-height: 28px;
+    height: 44px;
+    min-height: 44px;
     padding-inline: var(--space-3);
     font-size: 0.72rem;
+  }
+  .product-card__wishlist-btn {
+    width: 44px;
+    height: 44px;
+    top: 4px;
+    right: 4px;
+    border: 6px solid transparent;
+    background-clip: padding-box;
   }
 }

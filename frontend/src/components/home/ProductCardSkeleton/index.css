@@ -40,6 +40,7 @@
 @media (max-width: 767px) {
   .product-card-skeleton {
     height: 290px;
+    min-width: 0;
   }
   .product-card-skeleton__image-wrap {
     height: 120px;

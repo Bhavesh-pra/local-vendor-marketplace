@@ -46,3 +46,9 @@
   background: var(--color-brand-primary-hover);
   border-color: var(--color-brand-primary-hover);
 }
+
+@media (max-width: 767px) {
+  .category-tabs__tab {
+    height: 44px;
+  }
+}

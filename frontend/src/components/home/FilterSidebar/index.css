@@ -242,5 +242,27 @@
 
   .filter-sidebar__mobile-close {
     display: flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .filter-sidebar__option {
+    min-height: 44px;
+    padding-block: var(--space-2);
+  }
+  .filter-sidebar__section-header {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .filter-sidebar__clear-btn {
+    position: relative;
+    padding: var(--space-2) var(--space-3);
+    margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3));
   }
 }

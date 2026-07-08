@@ -96,3 +96,9 @@
     display: block;
   }
 }
+
+@media (max-width: 767px) {
+  .home-sort-bar__select {
+    height: 44px;
+  }
+}
