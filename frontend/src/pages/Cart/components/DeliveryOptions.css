@@ -183,4 +183,8 @@
   .cart-delivery-card {
     padding: 16px;
   }
+
+  .cart-delivery-options__change-btn {
+    padding: 10px 14px;
+  }
 }

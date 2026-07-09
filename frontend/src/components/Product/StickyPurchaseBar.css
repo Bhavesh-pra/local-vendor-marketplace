@@ -108,5 +108,28 @@
 @media (max-width: 768px) {
   .sticky-purchase-bar-wrapper {
     display: block;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .sticky-purchase-bar-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .sticky-bar-info {
+    width: 100%;
+  }
+  .sticky-bar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .sticky-action-btn {
+    height: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
   }
 }

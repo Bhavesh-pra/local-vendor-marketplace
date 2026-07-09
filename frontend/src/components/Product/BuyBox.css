@@ -176,3 +176,20 @@
   color: var(--text-main, #ffffff);
   border-color: var(--text-muted, #8a8d93);
 }
+
+@media (max-width: 767px) {
+  .buy-box-container {
+    position: static;
+  }
+  .buy-box-btn {
+    height: 44px;
+    min-height: 44px;
+  }
+  .qty-stepper {
+    height: 44px;
+  }
+  .qty-step-btn {
+    width: 44px;
+    height: 44px;
+  }
+}

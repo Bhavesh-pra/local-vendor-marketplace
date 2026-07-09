@@ -376,4 +376,18 @@
   .cart-item-card__actions {
     margin-top: 0;
   }
+
+  .cart-item-card__stepper-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cart-item-card__stepper-val {
+    height: 44px;
+  }
+
+  .cart-item-card__action-btn {
+    width: 44px;
+    height: 44px;
+  }
 }

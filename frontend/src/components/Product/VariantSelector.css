@@ -108,3 +108,14 @@
   transform: rotate(-15deg);
   pointer-events: none;
 }
+
+@media (max-width: 767px) {
+  .variant-pill {
+    height: 44px;
+    min-height: 44px;
+  }
+  .size-pill {
+    width: 44px;
+    height: 44px;
+  }
+}

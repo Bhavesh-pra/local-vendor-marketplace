@@ -290,3 +290,18 @@
     width: 100%;
   }
 }
+
+@media (max-width: 767px) {
+  .cart-promo-input-group {
+    height: 52px;
+    padding: 4px 4px 4px 12px;
+  }
+  .cart-promo-input-group__field {
+    height: 44px;
+  }
+  .cart-promo-input-group__btn {
+    height: 44px;
+    min-height: 44px;
+    padding: 0 16px;
+  }
+}

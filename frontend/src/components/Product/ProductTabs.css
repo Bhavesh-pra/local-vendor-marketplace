@@ -110,3 +110,14 @@
 .fade-in {
   animation: tabPaneFade 250ms ease forwards;
 }
+
+@media (max-width: 767px) {
+  .tab-header-btn {
+    height: 44px;
+    padding-block: 0;
+  }
+  .tab-pane-specs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
