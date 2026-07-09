@@ -62,6 +62,7 @@
   color: var(--color-text-heading);
   margin: 0;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
 }
 
 .order-details-page__copy-btn {
@@ -360,4 +361,15 @@
 .order-details-support__link:hover {
   color: var(--color-brand-primary-hover, #4f46e5);
   text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+  .order-details-page__back-link {
+    padding: 10px 14px;
+  }
+  .order-details-actions__btn-cancel,
+  .order-details-actions__btn-reorder-placeholder,
+  .order-details-actions__btn-invoice-placeholder {
+    height: 44px;
+  }
 }

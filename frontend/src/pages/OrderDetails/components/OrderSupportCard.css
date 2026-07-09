@@ -98,3 +98,14 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+@media (max-width: 767px) {
+  .order-support-card__btn-contact,
+  .order-support-card__btn-faq {
+    height: 44px;
+  }
+  .order-support-card__copy-btn {
+    padding: 12px;
+    margin: -8px;
+  }
+}

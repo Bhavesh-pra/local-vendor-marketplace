@@ -51,3 +51,9 @@
 .orders-filter-bar__tab--active .orders-filter-bar__count {
   background: rgba(255, 255, 255, 0.25);
 }
+
+@media (max-width: 767px) {
+  .orders-filter-bar__tab {
+    padding: 12px var(--space-4);
+  }
+}

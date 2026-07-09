@@ -49,3 +49,9 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+@media (max-width: 767px) {
+  .invoice-card__btn {
+    height: 44px;
+  }
+}

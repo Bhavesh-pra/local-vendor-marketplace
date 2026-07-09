@@ -120,3 +120,11 @@
     flex-direction: column-reverse;
   }
 }
+
+@media (max-width: 767px) {
+  .cancel-order-modal-card__close-btn {
+    padding: 12px;
+    top: 8px;
+    right: 8px;
+  }
+}

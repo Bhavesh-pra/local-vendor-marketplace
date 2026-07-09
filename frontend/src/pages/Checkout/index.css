@@ -269,3 +269,24 @@
   }
 }
 
+/* Scoped keyboard avoidance for mobile checkout CTA */
+body:has(.checkout-page input:focus, .checkout-page textarea:focus, .checkout-page select:focus) .checkout-page__mobile-sticky {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .checkout-page {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+  .checkout-page__mobile-sticky {
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  }
+  .checkout-page__back-link {
+    padding: 10px 14px;
+  }
+  .checkout-stepper__step {
+    min-height: 44px;
+    padding-block: 4px;
+  }
+}
+
