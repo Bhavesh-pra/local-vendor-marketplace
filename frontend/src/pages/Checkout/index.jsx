@@ -17,6 +17,7 @@ import { placeOrder } from '../../services/orderService.js';
 import { calculateShipping, calculateTotal } from '../../utils/pricing.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { extractErrorMessage } from '../../utils/extractErrorMessage.js';
+import { useTelemetry } from '../../hooks/useTelemetry.js';
 import { ROUTES } from '../../constants/routes.js';
 import { AlertCircle } from 'lucide-react';
 import './index.css';
@@ -32,6 +33,7 @@ export default function Checkout() {
   const { cartId, setCartId, resetCart } = useCart();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { trackEvent } = useTelemetry();
 
   // Data states
   const [items, setItems] = useState([]);
@@ -108,7 +110,7 @@ export default function Checkout() {
       ]);
 
       const rawItems = Array.isArray(cartItems) ? cartItems : [];
-      const products = Array.isArray(productsList) ? productsList : productsList?.products ?? [];
+      const products = Array.isArray(productsList) ? productsList : (productsList?.items ?? productsList?.products ?? []);
 
       const merged = rawItems.map((item) => {
         const prod = products.find((p) => p.product_id === item.product_id);
@@ -269,6 +271,12 @@ export default function Checkout() {
       showToast('success', 'Order placed successfully!');
       
       const orderId = response.order_id;
+      trackEvent('purchase_complete', {
+        metadata: {
+          order_id: orderId,
+          total_amount: grandTotal
+        }
+      });
       navigate(`/order-success/${orderId}`, { replace: true });
     } catch (err) {
       setBackendError(extractErrorMessage(err, 'Failed to place order. Please try again.'));

@@ -1,0 +1,95 @@
+.active-chips {
+  width: 100%;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.active-chips__scroll-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: var(--space-1) 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+.active-chips__scroll-container::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.active-chips__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-default);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-body);
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.active-chips__chip:hover {
+  border-color: var(--color-text-brand, #EAB308);
+  color: var(--color-text-heading);
+}
+
+.active-chips__chip-remove-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.active-chips__chip-remove-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-heading);
+}
+
+.active-chips__clear-all-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-brand, #EAB308);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: opacity var(--duration-fast) var(--easing-out);
+  white-space: nowrap;
+}
+
+.active-chips__clear-all-btn:hover {
+  opacity: 0.8;
+}
+
+/* Mobile Sizing & Touch Targets (Phase 3 Rule: min 44px) */
+@media (max-width: 767px) {
+  .active-chips__chip {
+    padding: 10px 14px;
+    font-size: var(--font-size-sm);
+  }
+
+  .active-chips__chip-remove-btn {
+    width: 44px;
+    height: 44px;
+    margin: -10px -10px -10px 0; /* Increase target size but keep visual boundaries neat */
+  }
+
+  .active-chips__clear-all-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 16px;
+  }
+}

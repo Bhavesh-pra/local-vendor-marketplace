@@ -13,6 +13,7 @@ import { getReviews } from '../../services/reviewService.js';
 import { createCart, addCartItem } from '../../services/cartService.js';
 import { ROUTES } from '../../constants/routes.js';
 import { extractErrorMessage } from '../../utils/extractErrorMessage.js';
+import { useTelemetry } from '../../hooks/useTelemetry.js';
 
 // New Experience Components
 import Breadcrumbs from '../../components/Product/Breadcrumbs.jsx';
@@ -22,8 +23,7 @@ import VariantSelector from '../../components/Product/VariantSelector.jsx';
 import BuyBox from '../../components/Product/BuyBox.jsx';
 import TrustBadges from '../../components/Product/TrustBadges.jsx';
 import ProductTabs from '../../components/Product/ProductTabs.jsx';
-import RelatedProducts from '../../components/Product/RelatedProducts.jsx';
-import RecentlyViewed from '../../components/Product/RecentlyViewed.jsx';
+import { RecommendationRails } from '../../components/home/RecommendationRails/index.jsx';
 import ShareButton from '../../components/Product/ShareButton.jsx';
 import StickyPurchaseBar from '../../components/Product/StickyPurchaseBar.jsx';
 import ProductGallery from '../../components/Product/ProductGallery.jsx';
@@ -39,10 +39,14 @@ export default function ProductDetails() {
   const { isAuthenticated, role } = useAuth();
   const { cartId, setCartId, incrementCount } = useCart();
   const { showToast } = useToast();
+  const { trackEvent } = useTelemetry();
 
   // Data states
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(3);
+  const [reviewsHasNext, setReviewsHasNext] = useState(false);
+  const [reviewsTotalCount, setReviewsTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,13 +66,16 @@ export default function ProductDetails() {
     setReviewsLoading(true);
     setError(null);
     try {
-      const [productData, reviewsData] = await Promise.all([
+      const [productData, reviewsResponse] = await Promise.all([
         getProduct(productId),
-        getReviews(productId)
+        getReviews(productId, { page: 1, limit: 3 })
       ]);
       
       setProduct(productData);
-      setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+      setReviews(reviewsResponse?.reviews || []);
+      setVisibleCount(3);
+      setReviewsHasNext(reviewsResponse?.has_next || false);
+      setReviewsTotalCount(reviewsResponse?.total_count || 0);
 
       // Auto-select first/default variant parameters
       const defaultVar = productData.variants?.find(v => v.is_default === 1) || productData.variants?.[0];
@@ -108,20 +115,53 @@ export default function ProductDetails() {
       });
       // Limit to 10 items
       localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)));
+
+      // Telemetry product view
+      trackEvent('product_view', {
+        productId: product.product_id,
+        categoryId: product.category_id
+      });
     }
-  }, [product]);
+  }, [product, trackEvent]);
 
   const refreshReviews = useCallback(async () => {
     setReviewsLoading(true);
     try {
-      const data = await getReviews(productId);
-      setReviews(Array.isArray(data) ? data : []);
+      const data = await getReviews(productId, { page: 1, limit: 3 });
+      setReviews(data?.reviews || []);
+      setVisibleCount(3);
+      setReviewsHasNext(data?.has_next || false);
+      setReviewsTotalCount(data?.total_count || 0);
     } catch (err) {
       console.error('Failed to reload reviews:', err);
     } finally {
       setReviewsLoading(false);
     }
   }, [productId]);
+
+  const loadMoreReviews = useCallback(async () => {
+    if (visibleCount < reviews.length) {
+      setVisibleCount(prev => Math.min(prev + 10, reviews.length));
+      return;
+    }
+
+    const calcPage = Math.floor((reviews.length - 3) / 10) + 2;
+
+    try {
+      const data = await getReviews(productId, { page: calcPage, limit: 10 });
+      const newReviews = data.reviews || [];
+      setReviews(prev => [...prev, ...newReviews]);
+      setVisibleCount(prev => prev + newReviews.length);
+      setReviewsHasNext(data.has_next || false);
+      setReviewsTotalCount(data.total_count || 0);
+    } catch (err) {
+      console.error('Failed to load more reviews:', err);
+    }
+  }, [productId, reviews.length, visibleCount]);
+
+  const showLessReviews = useCallback(() => {
+    setVisibleCount(3);
+  }, []);
 
   // Get active selected variant
   const activeVariant = product?.variants?.find(
@@ -156,6 +196,11 @@ export default function ProductDetails() {
       await addCartItem(payload);
       incrementCount(qty);
       showToast('success', `${qty} × ${product.product_name} added to cart!`);
+      trackEvent('add_to_cart', {
+        productId: product.product_id,
+        categoryId: product.category_id,
+        metadata: { quantity: qty }
+      });
     } catch (err) {
       showToast('error', extractErrorMessage(err, 'Failed to add item to cart.'));
     } finally {
@@ -308,6 +353,7 @@ export default function ProductDetails() {
               isAdding={isAdding}
               shipping={product.shipping}
               warranty={product.warranty}
+              onAddToWishlist={() => trackEvent('wishlist_add', { productId: product.product_id })}
             />
           </div>
         </div>
@@ -326,7 +372,15 @@ export default function ProductDetails() {
 
         {/* Reviews Section */}
         <div className="product-details-page__reviews">
-          <ReviewsSection reviews={reviews} loading={reviewsLoading} />
+          <ReviewsSection
+            reviews={reviews}
+            loading={reviewsLoading}
+            visibleCount={visibleCount}
+            hasNext={visibleCount < reviews.length || reviewsHasNext}
+            totalCount={reviewsTotalCount}
+            onLoadMore={loadMoreReviews}
+            onShowLess={showLessReviews}
+          />
 
           {/* Review submission form */}
           {canReview && !loading && (
@@ -334,17 +388,8 @@ export default function ProductDetails() {
           )}
         </div>
 
-        {/* Related Products carousels */}
-        {product.relatedProducts && (
-          <RelatedProducts
-            relatedProducts={product.relatedProducts}
-            onAddToCart={handleRelatedAddToCart}
-            isAddingProductId={addingRelatedProductId}
-          />
-        )}
-
-        {/* Recently Viewed Products */}
-        <RecentlyViewed currentProductId={product.product_id} />
+        {/* Dynamic Recommendations Rails */}
+        <RecommendationRails productId={product.product_id} />
 
         {/* Mobile Sticky Bottom Purchase Panel */}
         <StickyPurchaseBar

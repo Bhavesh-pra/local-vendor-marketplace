@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eff6ff" />
+      <stop offset="100%" stop-color="#bfdbfe" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" fill="url(#bg)" />
+  <text x="40" y="52" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#1d4ed8">ShopCart Local</text>
+  <text x="40" y="84" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="800" fill="#0f172a">Smartberry Pro Wireless Earbuds</text>
+  <text x="40" y="110" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#475569">Lifestyle Gallery View</text>
+  <rect x="160" y="140" rx="28" ry="28" width="320" height="140" fill="#1d4ed8" opacity="0.12" />
+  <rect x="242" y="118" rx="26" ry="26" width="156" height="170" fill="#ffffff" stroke="#1d4ed8" stroke-width="6" />
+  <circle cx="290" cy="210" r="22" fill="#1d4ed8" opacity="0.75" />
+  <circle cx="350" cy="210" r="22" fill="#1d4ed8" opacity="0.45" />
+  <rect x="270" y="144" rx="10" ry="10" width="100" height="16" fill="#1d4ed8" opacity="0.16" />
+  <text x="40" y="338" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#1d4ed8">Smartberry</text>
+  <text x="40" y="364" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#334155">Wireless earbuds for commute, calls, and everyday listening.</text>
+</svg>

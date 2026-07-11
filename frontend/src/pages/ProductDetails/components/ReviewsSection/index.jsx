@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { StarRating } from '../../../../components/ui/StarRating/index.jsx';
 import { Skeleton } from '../../../../components/ui/Skeleton/index.jsx';
@@ -80,7 +80,15 @@ function ReviewItem({ review }) {
  * @param {object[]} reviews
  * @param {boolean}  loading
  */
-export function ReviewsSection({ reviews, loading }) {
+export function ReviewsSection({
+  reviews,
+  loading,
+  visibleCount = 3,
+  hasNext = false,
+  totalCount = 0,
+  onLoadMore,
+  onShowLess
+}) {
   const [sortBy, setSortBy] = useState('newest');
 
   const sortedReviews = useMemo(() => {
@@ -95,6 +103,10 @@ export function ReviewsSection({ reviews, loading }) {
         return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
   }, [reviews, sortBy]);
+
+  const visibleReviews = useMemo(() => {
+    return sortedReviews.slice(0, visibleCount);
+  }, [sortedReviews, visibleCount]);
 
   if (loading) {
     return (
@@ -120,7 +132,7 @@ export function ReviewsSection({ reviews, loading }) {
     <div className="reviews-section">
       <div className="reviews-section__header-row">
         <h2 className="reviews-section__title">
-          Customer Reviews {reviews.length > 0 && `(${reviews.length})`}
+          Customer Reviews {totalCount > 0 && `(${totalCount})`}
         </h2>
 
         {reviews.length > 1 && (
@@ -148,9 +160,32 @@ export function ReviewsSection({ reviews, loading }) {
         />
       ) : (
         <div className="reviews-section__list">
-          {sortedReviews.map((review) => (
+          {visibleReviews.map((review) => (
             <ReviewItem key={review.review_id} review={review} />
           ))}
+
+          <div className="reviews-section__pagination">
+            <p className="reviews-section__pagination-info">
+              Showing {Math.min(visibleCount, totalCount)} of {totalCount} reviews
+            </p>
+            {hasNext ? (
+              <button
+                type="button"
+                className="reviews-section__load-btn"
+                onClick={onLoadMore}
+              >
+                Load More Reviews
+              </button>
+            ) : totalCount > 3 ? (
+              <button
+                type="button"
+                className="reviews-section__load-btn"
+                onClick={onShowLess}
+              >
+                Show Less
+              </button>
+            ) : null}
+          </div>
         </div>
       )}
     </div>

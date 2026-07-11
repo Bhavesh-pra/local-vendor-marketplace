@@ -654,6 +654,9 @@ const createAdminController = (database) => ({
       }
 
       await database.run('COMMIT');
+      if (global.clearSearchVocabularyCache) {
+        global.clearSearchVocabularyCache();
+      }
       res.json({ message: 'Product updated successfully' });
     } catch (err) {
       await database.run('ROLLBACK');
@@ -674,6 +677,9 @@ const createAdminController = (database) => ({
         [status, id]
       );
       if (result.changes === 0) return res.status(404).json({ message: 'Product not found' });
+      if (global.clearSearchVocabularyCache) {
+        global.clearSearchVocabularyCache();
+      }
       res.json({ message: `Product set to ${status}` });
     } catch (err) {
       res.status(500).json({ message: 'Database error: ' + err.message });

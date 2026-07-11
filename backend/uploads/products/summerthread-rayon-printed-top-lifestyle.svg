@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">SummerThread Rayon Printed Top</title>
+  <desc id="desc">Light rayon top with an all-over print and a fluid drape for warm days.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6efe8" />
+      <stop offset="100%" stop-color="#d9c3a8" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" fill="url(#bg)" />
+  <circle cx="92" cy="86" r="54" fill="#db2777" opacity="0.10" />
+  <circle cx="548" cy="84" r="72" fill="#db2777" opacity="0.08" />
+  <text x="40" y="50" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#db2777">ShopCart Local</text>
+  <text x="40" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="800" fill="#111827">SummerThread Rayon Printed Top</text>
+  <text x="40" y="106" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#475569">In Use · Clothes</text>
+  
+      <path d="M196 90 232 68h56l36 22 44 28-28 44-36-26v166H220V136l-36 26-28-44z" fill="white" opacity="0.95" stroke="#db2777" stroke-width="6"/>
+      <path d="M232 68c8 18 22 28 28 28s20-10 28-28" fill="none" stroke="#db2777" stroke-width="6" opacity="0.6"/>
+      <rect x="182" y="310" rx="14" ry="14" width="176" height="28" fill="#db2777" opacity="0.14" />
+      <text x="40" y="328" font-size="22" font-weight="700" fill="#db2777">SummerThread</text>
+      <text x="40" y="355" font-size="15" fill="#3f2d22">SummerThread Rayon P</text>
+    
+</svg>

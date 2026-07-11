@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">VoltEdge 20W USB-C Fast Charger</title>
+  <desc id="desc">Travel-friendly PD charger for phones, earbuds, and compact accessories.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eff6ff" />
+      <stop offset="100%" stop-color="#bfdbfe" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" fill="url(#bg)" />
+  <circle cx="92" cy="86" r="54" fill="#ea580c" opacity="0.10" />
+  <circle cx="548" cy="84" r="72" fill="#ea580c" opacity="0.08" />
+  <text x="40" y="50" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#ea580c">ShopCart Local</text>
+  <text x="40" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="800" fill="#111827">VoltEdge 20W USB-C Fast Charger</text>
+  <text x="40" y="106" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#475569">In Use · Electronics</text>
+  
+      <rect x="120" y="96" rx="28" ry="28" width="280" height="160" fill="#ea580c" opacity="0.18" />
+      <rect x="165" y="82" rx="24" ry="24" width="190" height="220" fill="white" opacity="0.96" stroke="#ea580c" stroke-width="6" />
+      <circle cx="260" cy="278" r="8" fill="#ea580c" opacity="0.55" />
+      <rect x="195" y="115" rx="14" ry="14" width="130" height="16" fill="#ea580c" opacity="0.20" />
+      <rect x="195" y="148" rx="14" ry="14" width="120" height="92" fill="#ea580c" opacity="0.10" />
+      <circle cx="225" cy="198" r="18" fill="#ea580c" opacity="0.72" />
+      <circle cx="293" cy="198" r="18" fill="#ea580c" opacity="0.42" />
+      <text x="40" y="328" font-size="22" font-weight="700" fill="#ea580c">VoltEdge</text>
+      <text x="40" y="355" font-size="15" fill="#1f2937">VoltEdge 20W USB-C F</text>
+    
+</svg>

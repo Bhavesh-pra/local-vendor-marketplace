@@ -365,3 +365,100 @@
     border-radius: 10px;
   }
 }
+
+/* Suggestions Dropdown Overlay */
+.discovery-bar__suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: var(--space-2);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.discovery-bar__suggestions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.discovery-bar__suggestion-item {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-heading);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: background-color var(--duration-fast) var(--easing-out);
+}
+
+.discovery-bar__suggestion-item:hover,
+.discovery-bar__suggestion-item--active {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.discovery-bar__suggestions-header {
+  padding: var(--space-2) var(--space-4) var(--space-1);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.discovery-bar__clear-searches-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.discovery-bar__clear-searches-btn:hover {
+  color: var(--color-text-heading);
+}
+
+/* Mobile Sort Button */
+.discovery-bar__mobile-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-heading);
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color var(--duration-fast) var(--easing-out),
+    background-color var(--duration-fast) var(--easing-out),
+    color var(--duration-fast) var(--easing-out);
+}
+
+.discovery-bar__mobile-sort-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+@media (min-width: 768px) {
+  .discovery-bar__mobile-sort-btn {
+    display: none;
+  }
+}

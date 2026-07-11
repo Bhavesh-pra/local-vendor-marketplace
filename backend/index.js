@@ -21,6 +21,8 @@ const { createReviewRoutes }  = require('./routes/reviewRoutes');
 const { createCartRoutes }    = require('./routes/cartRoutes');
 const { createOrderRoutes }   = require('./routes/orderRoutes');
 const { createAdminRoutes }   = require('./routes/adminRoutes');
+const { createAnalyticsController } = require('./controllers/analyticsController');
+const { createAnalyticsRoutes } = require('./routes/analyticsRoutes');
 const { sendOrderEmail } = require('./services/emailService');
 
 const app = express()
@@ -39,6 +41,7 @@ const initializeDbAndServer = async () => {
     const cartController    = createCartController(database);
     const orderController   = createOrderController(database, sendOrderEmail);
     const adminController   = createAdminController(database);
+    const analyticsController = createAnalyticsController(database);
 
     app.use(createAuthRoutes(authController));
     app.use(createProductRoutes(productController));
@@ -46,6 +49,7 @@ const initializeDbAndServer = async () => {
     app.use(createCartRoutes(cartController));
     app.use(createOrderRoutes(orderController));
     app.use(createAdminRoutes(adminController));
+    app.use(createAnalyticsRoutes(analyticsController));
 
     app.listen(3000, () =>
       console.log('Server Running at http://localhost:3000/'),

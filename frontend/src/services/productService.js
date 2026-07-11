@@ -1,8 +1,13 @@
 import axiosInstance from '../lib/axios.js';
 
 /** Fetch all products */
-export async function getProducts() {
-  const response = await axiosInstance.get('/products/');
+export async function getProducts(params = {}, config = {}) {
+  const response = await axiosInstance.get('/products/', { params, ...config });
+  return response.data;
+}
+
+export async function getProductSuggestions(q, config = {}) {
+  const response = await axiosInstance.get('/products/suggestions', { params: { q }, ...config });
   return response.data;
 }
 

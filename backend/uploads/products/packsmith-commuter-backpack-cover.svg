@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Packsmith Commuter Backpack</title>
+  <desc id="desc">Water-resistant commuter backpack with laptop sleeve and quick-access pockets.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff7ed" />
+      <stop offset="100%" stop-color="#fed7aa" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" fill="url(#bg)" />
+  <circle cx="92" cy="86" r="54" fill="#4b5563" opacity="0.10" />
+  <circle cx="548" cy="84" r="72" fill="#4b5563" opacity="0.08" />
+  <text x="40" y="50" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#4b5563">ShopCart Local</text>
+  <text x="40" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="800" fill="#111827">Packsmith Commuter Backpack</text>
+  <text x="40" y="106" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#475569">Gallery View · Accessories</text>
+  
+      <ellipse cx="260" cy="310" rx="126" ry="18" fill="#4b5563" opacity="0.10"/>
+      <path d="M178 184c0-58 36-96 82-96 44 0 80 38 80 96v92H178z" fill="white" opacity="0.96" stroke="#4b5563" stroke-width="6"/>
+      <path d="M212 184c4-28 22-48 48-48 26 0 44 20 48 48" fill="none" stroke="#4b5563" stroke-width="8" stroke-linecap="round"/>
+      <rect x="232" y="210" rx="10" ry="10" width="56" height="30" fill="#4b5563" opacity="0.18"/>
+      <text x="40" y="328" font-size="22" font-weight="700" fill="#4b5563">Packsmith</text>
+      <text x="40" y="355" font-size="15" fill="#412515">Packsmith Commuter B</text>
+    
+</svg>

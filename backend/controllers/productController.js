@@ -6,6 +6,97 @@ const getFullUrl = (req, filePath) => {
   return `${protocol}://${host}${filePath}`;
 };
 
+let cachedVocabulary = null;
+
+// Rebuild vocabulary cache
+async function rebuildSearchVocabulary(db) {
+  try {
+    const products = await db.all('SELECT product_name, brand FROM products WHERE product_status = "active"');
+    const categories = await db.all('SELECT category_name FROM categories');
+    
+    const words = new Set();
+    const synonyms = ['iphone', 'samsung', 'phone', 'clothes', 'tshirt', 't shirt', 'earbuds', 'earphones', 'mobile', 'cellphone', 'shoes', 'footwear'];
+    synonyms.forEach(w => words.add(w.toLowerCase()));
+
+    products.forEach(p => {
+      if (p.product_name) {
+        p.product_name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).forEach(w => words.add(w));
+      }
+      if (p.brand) {
+        words.add(p.brand.toLowerCase().trim());
+      }
+    });
+
+    categories.forEach(c => {
+      if (c.category_name) {
+        c.category_name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).forEach(w => words.add(w));
+      }
+    });
+
+    cachedVocabulary = Array.from(words).filter(w => w.length >= 4);
+  } catch (err) {
+    console.error('[productController] rebuildSearchVocabulary error:', err.message);
+  }
+}
+
+// Levenshtein distance implementation
+function levenshteinDistance(s, t) {
+  if (!s || !t) return Math.max((s || '').length, (t || '').length);
+  const d = [];
+  for (let i = 0; i <= s.length; i++) d[i] = [i];
+  for (let j = 0; j <= t.length; j++) d[0][j] = j;
+  for (let i = 1; i <= s.length; i++) {
+    for (let j = 1; j <= t.length; j++) {
+      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return d[s.length][t.length];
+}
+
+// Typo correction function
+async function getTypoCorrection(db, cleanQuery) {
+  if (!cachedVocabulary) {
+    await rebuildSearchVocabulary(db);
+  }
+  if (!cachedVocabulary || cachedVocabulary.length === 0) return null;
+
+  const tokens = cleanQuery.split(' ');
+  let corrected = false;
+  const correctedTokens = tokens.map(token => {
+    // Only correct tokens with length >= 4
+    if (token.length < 4) return token;
+    if (cachedVocabulary.includes(token)) return token;
+
+    let bestMatch = null;
+    let minDistance = 3; // Must be <= 2
+
+    for (const vocab of cachedVocabulary) {
+      const dist = levenshteinDistance(token, vocab);
+      if (dist < minDistance) {
+        minDistance = dist;
+        bestMatch = vocab;
+      }
+    }
+
+    if (bestMatch && minDistance <= 2) {
+      corrected = true;
+      return bestMatch;
+    }
+    return token;
+  });
+
+  return corrected ? correctedTokens.join(' ') : null;
+}
+
+global.clearSearchVocabularyCache = () => {
+  cachedVocabulary = null;
+};
+
 const createProductController = (database) => ({
   addProduct: async (request, response) => {
     const {
@@ -283,6 +374,9 @@ const createProductController = (database) => ({
       }
 
       await database.run('COMMIT');
+      if (global.clearSearchVocabularyCache) {
+        global.clearSearchVocabularyCache();
+      }
       response.json({ message: 'Product added successfully', product_id });
     } catch (err) {
       await database.run('ROLLBACK');
@@ -293,7 +387,89 @@ const createProductController = (database) => ({
 
   getProducts: async (req, res) => {
     try {
-      const products = await database.all(`
+      let {
+        q,
+        category,
+        brand,
+        minPrice,
+        maxPrice,
+        rating,
+        stock,
+        sort = 'relevance',
+        page = 1,
+        limit = 10
+      } = req.query;
+
+      const pPage = Math.max(1, parseInt(page, 10));
+      const pLimit = Math.max(1, parseInt(limit, 10));
+      const offset = (pPage - 1) * pLimit;
+
+      const params = [];
+      let matchQuery = '';
+
+      // Preserve original query string for telemetry / corrections
+      const originalQuery = req.query.q || '';
+
+      // ─── Query Intent Mappings (Hidden Overrides) ───
+      let intentOverride = null;
+      if (q && q.trim().length > 0) {
+        const cleanVal = q.toLowerCase().trim().replace(/\s+/g, ' ');
+        if (cleanVal === 'cheap phone' || cleanVal === 'cheap phones') {
+          intentOverride = {
+            qApplied: 'phone',
+            categoryApplied: 'electronics',
+            sortApplied: 'price_asc'
+          };
+        } else if (cleanVal === 'best earbud' || cleanVal === 'best earbuds') {
+          intentOverride = {
+            qApplied: 'earbuds',
+            categoryApplied: 'electronics',
+            sortApplied: 'rating_desc'
+          };
+        } else if (cleanVal === 'popular shoe' || cleanVal === 'popular shoes') {
+          intentOverride = {
+            qApplied: 'shoes',
+            categoryApplied: 'clothes',
+            sortApplied: 'popularity'
+          };
+        }
+
+        if (intentOverride) {
+          q = intentOverride.qApplied;
+          category = intentOverride.categoryApplied;
+          sort = intentOverride.sortApplied;
+        }
+      }
+
+      if (q && q.trim().length > 0) {
+        // Query normalization pipeline
+        let cleanQ = q.toLowerCase().trim();
+        cleanQ = cleanQ.replace(/[^a-zA-Z0-9\s]/g, '');
+        cleanQ = cleanQ.replace(/\s+/g, ' ').trim();
+
+        if (cleanQ.length > 0) {
+          const SYNONYMS = {
+            cloths: 'clothes',
+            tshirt: 't shirt',
+            tee: 'tshirt',
+            earphones: 'earbuds',
+            mobile: 'phone',
+            cellphone: 'phone'
+          };
+          
+          let tokens = cleanQ.split(' ');
+          tokens = tokens.map(token => SYNONYMS[token] || token);
+          
+          cleanQ = tokens.join(' ').replace(/\s+/g, ' ').trim();
+          tokens = cleanQ.split(' ');
+          
+          const ftsTokens = tokens.map(token => `${token}*`);
+          matchQuery = ftsTokens.join(' AND ');
+        }
+      }
+
+      // Base query
+      let query = `
         SELECT
           p.product_id,
           p.supplier_id,
@@ -304,7 +480,6 @@ const createProductController = (database) => ({
           p.slug,
           p.description,
           p.sku,
-          p.manufacture_date,
           p.cost_price,
           p.selling_price,
           p.mrp,
@@ -317,20 +492,526 @@ const createProductController = (database) => ({
           c.category_name,
           c.category_name as category,
           IFNULL(AVG(r.rating), 0) as average_rating,
-          COUNT(r.review_id) as reviews_count
-        FROM products p
+          COUNT(r.review_id) as reviews_count,
+          COALESCE(sales.quantity_sold, 0) as sales_qty,
+          IFNULL(stock_info.total_stock, 0) as total_stock
+      `;
+
+      if (matchQuery) {
+        query += `,
+          (1.0 - 1.0 / (1.0 + ABS(fts.bm25_score))) as relevance_score,
+          CASE WHEN COALESCE(sales.quantity_sold, 0) >= 10 THEN 1.0 ELSE CAST(COALESCE(sales.quantity_sold, 0) AS REAL) / 10.0 END as popularity_score,
+          (IFNULL(AVG(r.rating), 0) / 5.0) as rating_score,
+          (0.7 * (1.0 - 1.0 / (1.0 + ABS(fts.bm25_score))) +
+           0.2 * (CASE WHEN COALESCE(sales.quantity_sold, 0) >= 10 THEN 1.0 ELSE CAST(COALESCE(sales.quantity_sold, 0) AS REAL) / 10.0 END) +
+           0.1 * (IFNULL(AVG(r.rating), 0) / 5.0)) as search_score
+        `;
+      } else {
+        query += `,
+          0.0 as relevance_score,
+          CASE WHEN COALESCE(sales.quantity_sold, 0) >= 10 THEN 1.0 ELSE CAST(COALESCE(sales.quantity_sold, 0) AS REAL) / 10.0 END as popularity_score,
+          (IFNULL(AVG(r.rating), 0) / 5.0) as rating_score,
+          0.0 as search_score
+        `;
+      }
+
+      if (matchQuery) {
+        query += `
+          FROM (
+            SELECT product_id, bm25(products_fts) as bm25_score
+            FROM products_fts
+            WHERE products_fts MATCH ?
+            LIMIT -1
+          ) fts
+          INNER JOIN products p ON fts.product_id = p.product_id
+        `;
+        params.push(matchQuery);
+      } else {
+        query += `
+          FROM products p
+        `;
+      }
+
+      query += `
         LEFT JOIN categories c ON p.category_id = c.category_id
         LEFT JOIN reviews r ON p.product_id = r.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(oi.quantity) as quantity_sold
+          FROM order_items oi
+          JOIN product_variants pv ON oi.variant_id = pv.variant_id
+          GROUP BY pv.product_id
+        ) sales ON p.product_id = sales.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(i.available_stock) as total_stock
+          FROM product_variants pv
+          JOIN inventory i ON pv.variant_id = i.variant_id
+          WHERE pv.status <> 'archived'
+          GROUP BY pv.product_id
+        ) stock_info ON p.product_id = stock_info.product_id
         WHERE p.product_status = 'active'
-        GROUP BY p.product_id
-      `);
-      
+      `;
+
+      // Category filter
+      if (category && category !== 'all') {
+        if (/^\d+$/.test(category)) {
+          query += ` AND p.category_id = ? `;
+          params.push(parseInt(category, 10));
+        } else {
+          query += ` AND (lower(c.category_name) = ? OR lower(c.category_slug) = ?) `;
+          params.push(category.toLowerCase(), category.toLowerCase());
+        }
+      }
+
+      // Brand filter
+      if (brand) {
+        query += ` AND lower(p.brand) = ? `;
+        params.push(brand.toLowerCase());
+      }
+
+      // Price filters
+      if (minPrice) {
+        query += ` AND p.selling_price >= ? `;
+        params.push(parseFloat(minPrice));
+      }
+      if (maxPrice) {
+        query += ` AND p.selling_price <= ? `;
+        params.push(parseFloat(maxPrice));
+      }
+
+      query += ` GROUP BY p.product_id `;
+
+      const havingClauses = [];
+      if (rating) {
+        havingClauses.push(` average_rating >= ? `);
+        params.push(parseFloat(rating));
+      }
+      if (stock === '1' || stock === 'true') {
+        havingClauses.push(` total_stock > 0 `);
+      }
+
+      if (havingClauses.length > 0) {
+        query += ` HAVING ` + havingClauses.join(' AND ');
+      }
+
+      // Sorting
+      switch (sort) {
+        case 'relevance':
+          if (matchQuery) {
+            query += ` ORDER BY search_score DESC `;
+          } else {
+            query += ` ORDER BY sales_qty DESC `;
+          }
+          break;
+        case 'popularity':
+          query += ` ORDER BY sales_qty DESC `;
+          break;
+        case 'newest':
+          query += ` ORDER BY p.created_at DESC `;
+          break;
+        case 'price_asc':
+          query += ` ORDER BY p.selling_price ASC `;
+          break;
+        case 'price_desc':
+          query += ` ORDER BY p.selling_price DESC `;
+          break;
+        case 'rating_desc':
+          query += ` ORDER BY average_rating DESC `;
+          break;
+        case 'discount_desc':
+          query += ` ORDER BY (CASE WHEN p.mrp > 0 THEN (p.mrp - p.selling_price) * 1.0 / p.mrp ELSE 0.0 END) DESC `;
+          break;
+        default:
+          query += ` ORDER BY p.product_id ASC `;
+          break;
+      }
+
+      // To get total count, wrap the base query (excluding pagination limit/offset) in a SELECT COUNT(*) subquery
+      let countQuery = `
+        SELECT COUNT(*) as total FROM (
+          SELECT p.product_id
+      `;
+
+      if (matchQuery) {
+        countQuery += `
+          FROM (
+            SELECT product_id
+            FROM products_fts
+            WHERE products_fts MATCH ?
+          ) fts
+          INNER JOIN products p ON fts.product_id = p.product_id
+        `;
+      } else {
+        countQuery += `
+          FROM products p
+        `;
+      }
+
+      countQuery += `
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN reviews r ON p.product_id = r.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(oi.quantity) as quantity_sold
+          FROM order_items oi
+          JOIN product_variants pv ON oi.variant_id = pv.variant_id
+          GROUP BY pv.product_id
+        ) sales ON p.product_id = sales.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(i.available_stock) as total_stock
+          FROM product_variants pv
+          JOIN inventory i ON pv.variant_id = i.variant_id
+          WHERE pv.status <> 'archived'
+          GROUP BY pv.product_id
+        ) stock_info ON p.product_id = stock_info.product_id
+        WHERE p.product_status = 'active'
+      `;
+
+      // Apply same WHERE conditions to countQuery
+      const countParams = [];
+      if (matchQuery) {
+        countParams.push(matchQuery);
+      }
+
+      if (category && category !== 'all') {
+        if (/^\d+$/.test(category)) {
+          countQuery += ` AND p.category_id = ? `;
+          countParams.push(parseInt(category, 10));
+        } else {
+          countQuery += ` AND (lower(c.category_name) = ? OR lower(c.category_slug) = ?) `;
+          countParams.push(category.toLowerCase(), category.toLowerCase());
+        }
+      }
+
+      if (brand) {
+        countQuery += ` AND lower(p.brand) = ? `;
+        countParams.push(brand.toLowerCase());
+      }
+
+      if (minPrice) {
+        countQuery += ` AND p.selling_price >= ? `;
+        countParams.push(parseFloat(minPrice));
+      }
+      if (maxPrice) {
+        countQuery += ` AND p.selling_price <= ? `;
+        countParams.push(parseFloat(maxPrice));
+      }
+
+      countQuery += ` GROUP BY p.product_id `;
+
+      if (havingClauses.length > 0) {
+        countQuery += ` HAVING ` + havingClauses.join(' AND ');
+      }
+
+      // Add the HAVING parameters
+      if (rating) {
+        countParams.push(parseFloat(rating));
+      }
+
+      countQuery += ` ) `; // Close subquery
+
+      // Pagination
+      query += ` LIMIT ? OFFSET ? `;
+      params.push(pLimit, offset);
+
+      const [products, totalCountRow] = await Promise.all([
+        database.all(query, params),
+        database.get(countQuery, countParams)
+      ]);
+
+      const total_count = totalCountRow?.total || 0;
+
       const mapped = products.map(p => ({
         ...p,
         image_url: getFullUrl(req, p.image_url)
       }));
-      res.json(mapped);
+
+      // Calculate brand facets (always showing all brands, even if count is 0)
+      let brandFacets = [];
+      try {
+        let facetQuery = `
+          SELECT b.brand as name, COUNT(p.product_id) as count
+          FROM (
+            SELECT DISTINCT brand 
+            FROM products 
+            WHERE brand IS NOT NULL AND brand != '' AND product_status = 'active'
+          ) b
+          LEFT JOIN products p ON b.brand = p.brand 
+            AND p.product_status = 'active'
+        `;
+
+        const facetParams = [];
+        const facetConditions = [];
+
+        if (matchQuery) {
+          facetConditions.push(` p.product_id IN (
+            SELECT product_id
+            FROM products_fts
+            WHERE products_fts MATCH ?
+          ) `);
+          facetParams.push(matchQuery);
+        }
+
+        if (category && category !== 'all') {
+          if (/^\d+$/.test(category)) {
+            facetConditions.push(` p.category_id = ? `);
+            facetParams.push(parseInt(category, 10));
+          } else {
+            facetConditions.push(` p.category_id IN (SELECT category_id FROM categories WHERE lower(category_name) = ? OR lower(category_slug) = ?) `);
+            facetParams.push(category.toLowerCase(), category.toLowerCase());
+          }
+        }
+
+        if (minPrice) {
+          facetConditions.push(` p.selling_price >= ? `);
+          facetParams.push(parseFloat(minPrice));
+        }
+        if (maxPrice) {
+          facetConditions.push(` p.selling_price <= ? `);
+          facetParams.push(parseFloat(maxPrice));
+        }
+
+        if (stock === '1' || stock === 'true') {
+          facetConditions.push(` p.product_id IN (
+            SELECT pv.product_id
+            FROM product_variants pv
+            JOIN inventory i ON pv.variant_id = i.variant_id
+            WHERE pv.status <> 'archived'
+            GROUP BY pv.product_id
+            HAVING SUM(i.available_stock) > 0
+          ) `);
+        }
+
+        if (rating) {
+          facetConditions.push(` p.product_id IN (
+            SELECT product_id
+            FROM reviews
+            GROUP BY product_id
+            HAVING AVG(rating) >= ?
+          ) `);
+          facetParams.push(parseFloat(rating));
+        }
+
+        if (facetConditions.length > 0) {
+          facetQuery += ` AND ` + facetConditions.join(' AND ');
+        }
+
+        facetQuery += ` GROUP BY b.brand `;
+
+        const facetRows = await database.all(facetQuery, facetParams);
+        brandFacets = facetRows.map(row => ({ name: row.name, count: row.count }));
+      } catch (facetErr) {
+        console.error('[productController] brand facets calculation error:', facetErr);
+      }
+
+      // ─── Typo Correction & Trending Recovery ───
+      let didYouMean = null;
+      let trending = [];
+
+      if (mapped.length === 0 && originalQuery) {
+        const cleanOrig = originalQuery.toLowerCase().trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, ' ');
+        if (cleanOrig.length > 0) {
+          didYouMean = await getTypoCorrection(database, cleanOrig);
+
+          // Fetch trending products excluding matches to original query tokens
+          const searchTokens = cleanOrig.split(' ').filter(t => t.length > 0);
+          let excludeClauses = '';
+          const excludeParams = [];
+          searchTokens.forEach(t => {
+            excludeClauses += ` AND p.product_name NOT LIKE ? AND p.brand NOT LIKE ? AND p.description NOT LIKE ? `;
+            excludeParams.push(`%${t}%`, `%${t}%`, `%${t}%`);
+          });
+
+          try {
+            const trendingRows = await database.all(`
+              SELECT p.product_id, p.product_name, p.selling_price, p.mrp, p.image_url, p.brand, p.category_id,
+                     c.category_name, p.badge, p.product_status, IFNULL(stock_info.total_stock, 0) AS total_stock,
+                     IFNULL(r.avg_rating, 0.0) AS average_rating,
+                     (IFNULL(v.views_count, 0) * 1 +
+                      IFNULL(rc.click_count, 0) * 2 +
+                      IFNULL(atc.cart_count, 0) * 4 +
+                      IFNULL(pur.purchase_count, 0) * 8) AS trending_score
+              FROM products p
+              LEFT JOIN categories c ON p.category_id = c.category_id
+              LEFT JOIN (
+                SELECT pv.product_id, SUM(i.available_stock) as total_stock
+                FROM product_variants pv
+                JOIN inventory i ON pv.variant_id = i.variant_id
+                WHERE pv.status <> 'archived'
+                GROUP BY pv.product_id
+              ) stock_info ON p.product_id = stock_info.product_id
+              LEFT JOIN (
+                SELECT product_id, AVG(rating) as avg_rating
+                FROM reviews
+                GROUP BY product_id
+              ) r ON p.product_id = r.product_id
+              LEFT JOIN (
+                SELECT product_id, COUNT(*) AS views_count 
+                FROM analytics_events 
+                WHERE event_name = 'product_view' 
+                GROUP BY product_id
+              ) v ON p.product_id = v.product_id
+              LEFT JOIN (
+                SELECT product_id, COUNT(*) AS click_count 
+                FROM analytics_events 
+                WHERE event_name = 'recommendation_click' 
+                GROUP BY product_id
+              ) rc ON p.product_id = rc.product_id
+              LEFT JOIN (
+                SELECT product_id, COUNT(*) AS cart_count 
+                FROM analytics_events 
+                WHERE event_name = 'add_to_cart' 
+                GROUP BY product_id
+              ) atc ON p.product_id = atc.product_id
+              LEFT JOIN (
+                SELECT pv.product_id, COUNT(*) AS purchase_count 
+                FROM order_items oi
+                JOIN product_variants pv ON oi.variant_id = pv.variant_id
+                GROUP BY pv.product_id
+              ) pur ON p.product_id = pur.product_id
+              WHERE p.product_status = 'active'
+                ${excludeClauses}
+              ORDER BY 
+                (IFNULL(stock_info.total_stock, 0) > 0) DESC,
+                trending_score DESC
+              LIMIT 4
+            `, excludeParams);
+
+            trending = trendingRows.map(tp => ({
+              product_id: tp.product_id,
+              product_name: tp.product_name,
+              selling_price: tp.selling_price,
+              mrp: tp.mrp,
+              image_url: getFullUrl(req, tp.image_url),
+              brand: tp.brand,
+              category_id: tp.category_id,
+              category_name: tp.category_name,
+              average_rating: tp.average_rating || 0.0,
+              badge: tp.badge || null,
+              product_status: tp.product_status,
+              total_stock: tp.total_stock
+            }));
+          } catch (trendErr) {
+            console.error('[productController] getProducts trending recovery error:', trendErr);
+          }
+        }
+      }
+
+      res.json({
+        items: mapped,
+        total_count,
+        page: pPage,
+        limit: pLimit,
+        has_next: offset + mapped.length < total_count,
+        facets: {
+          brands: brandFacets
+        },
+        intentOverride,
+        didYouMean,
+        trending
+      });
     } catch (err) {
+      console.error('[productController] getProducts error:', err.message);
+      res.status(500).json({ message: 'Database error: ' + err.message });
+    }
+  },
+
+  getProductSuggestions: async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      // Rule: minimum query length = 3 characters
+      if (!q || q.trim().length < 3) {
+        return res.json([]);
+      }
+
+      let cleanQ = q.toLowerCase().trim();
+      cleanQ = cleanQ.replace(/[^a-zA-Z0-9\s]/g, '');
+      cleanQ = cleanQ.replace(/\s+/g, ' ').trim();
+
+      if (cleanQ.length === 0) {
+        return res.json([]);
+      }
+
+      const SYNONYMS = {
+        cloths: 'clothes',
+        tshirt: 't shirt',
+        tee: 'tshirt',
+        earphones: 'earbuds',
+        mobile: 'phone',
+        cellphone: 'phone'
+      };
+
+      let tokens = cleanQ.split(' ');
+      tokens = tokens.map(token => SYNONYMS[token] || token);
+      cleanQ = tokens.join(' ').replace(/\s+/g, ' ').trim();
+      tokens = cleanQ.split(' ');
+
+      const ftsTokens = tokens.map(token => `${token}*`);
+      const matchQuery = ftsTokens.join(' AND ');
+
+      // Query database for all matching products and sales counts
+      const products = await database.all(`
+        SELECT p.product_name, COALESCE(sales.quantity_sold, 0) AS sales_qty
+        FROM products p
+        INNER JOIN products_fts fts ON p.product_id = fts.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(oi.quantity) as quantity_sold
+          FROM order_items oi
+          JOIN product_variants pv ON oi.variant_id = pv.variant_id
+          GROUP BY pv.product_id
+        ) sales ON p.product_id = sales.product_id
+        WHERE p.product_status = 'active'
+          AND fts.products_fts MATCH ?
+      `, [matchQuery]);
+
+      // Query database for categories matching prefix
+      const categories = await database.all(`
+        SELECT c.category_name, COUNT(oi.order_id) AS sales_qty
+        FROM categories c
+        LEFT JOIN products p ON c.category_id = p.category_id
+        LEFT JOIN product_variants pv ON p.product_id = pv.product_id
+        LEFT JOIN order_items oi ON pv.variant_id = oi.variant_id
+        WHERE lower(c.category_name) LIKE ?
+        GROUP BY c.category_name
+        ORDER BY sales_qty DESC
+      `, [`${cleanQ}%`]);
+
+      // Query database for brands matching prefix
+      const brands = await database.all(`
+        SELECT p.brand, COUNT(oi.order_id) AS sales_qty
+        FROM products p
+        LEFT JOIN product_variants pv ON p.product_id = pv.product_id
+        LEFT JOIN order_items oi ON pv.variant_id = oi.variant_id
+        WHERE lower(p.brand) LIKE ? AND p.product_status = 'active'
+        GROUP BY p.brand
+        ORDER BY sales_qty DESC
+      `, [`${cleanQ}%`]);
+
+      const suggestionsSet = new Set();
+
+      // ─── Priority 1: Exact prefix product matches ───
+      const exactPrefixProducts = products
+        .filter(p => p.product_name.toLowerCase().startsWith(cleanQ))
+        .sort((a, b) => b.sales_qty - a.sales_qty);
+
+      exactPrefixProducts.forEach(p => suggestionsSet.add(p.product_name));
+
+      // ─── Priority 2: Popular matching product names ───
+      const popularProducts = products
+        .filter(p => !p.product_name.toLowerCase().startsWith(cleanQ))
+        .sort((a, b) => b.sales_qty - a.sales_qty);
+
+      popularProducts.forEach(p => suggestionsSet.add(p.product_name));
+
+      // ─── Priority 3: Popular matching categories ───
+      categories.forEach(c => suggestionsSet.add(c.category_name));
+
+      // ─── Priority 4: Popular matching brands ───
+      brands.forEach(b => suggestionsSet.add(b.brand));
+
+      const suggestions = Array.from(suggestionsSet).slice(0, 8);
+      res.json(suggestions);
+    } catch (err) {
+      console.error('[productController] getProductSuggestions error:', err.message);
       res.status(500).json({ message: 'Database error: ' + err.message });
     }
   },
@@ -520,6 +1201,220 @@ const createProductController = (database) => ({
       }
     } catch (err) {
       console.error('[productController] getProduct error:', err.message);
+      res.status(500).json({ message: 'Database error: ' + err.message });
+    }
+  },
+
+  getRecommendations: async (req, res) => {
+    try {
+      const { product_id } = req.params;
+      const targetId = parseInt(product_id, 10);
+
+      if (isNaN(targetId)) {
+        return res.status(400).json({ message: 'Invalid product_id' });
+      }
+
+      // Fetch current product details to use in similarity queries
+      const currentProduct = await database.get(
+        'SELECT category_id, selling_price, brand FROM products WHERE product_id = ? AND product_status = "active"',
+        [targetId]
+      );
+
+      if (!currentProduct) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      const getFullUrl = (request, filepath) => {
+        if (!filepath) return '';
+        if (filepath.startsWith('http://') || filepath.startsWith('https://')) return filepath;
+        return `${request.protocol}://${request.get('host')}/${filepath.replace(/\\/g, '/')}`;
+      };
+
+      // Map products to include legacy fields and full URLs
+      const mapProductDetails = (rows) => {
+        return rows.map(p => ({
+          product_id: p.product_id,
+          product_name: p.product_name,
+          selling_price: p.selling_price,
+          mrp: p.mrp,
+          image_url: getFullUrl(req, p.image_url),
+          brand: p.brand,
+          category_id: p.category_id,
+          category_name: p.category_name,
+          average_rating: p.average_rating || 0.0,
+          badge: p.badge || null,
+          product_status: p.product_status,
+          total_stock: p.total_stock
+        }));
+      };
+
+      // ─── 1. Frequently Bought Together (FBT) ───
+      const fbtRows = await database.all(`
+        SELECT p.product_id, p.product_name, p.selling_price, p.mrp, p.image_url, p.brand, p.category_id,
+               c.category_name, p.badge, p.product_status, IFNULL(stock_info.total_stock, 0) AS total_stock,
+               IFNULL(r.avg_rating, 0.0) AS average_rating,
+               COUNT(DISTINCT oi2.order_id) AS co_purchase_count
+        FROM order_items oi1
+        JOIN product_variants pv1 ON oi1.variant_id = pv1.variant_id
+        JOIN order_items oi2 ON oi1.order_id = oi2.order_id
+        JOIN product_variants pv2 ON oi2.variant_id = pv2.variant_id
+        JOIN products p ON pv2.product_id = p.product_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(i.available_stock) as total_stock
+          FROM product_variants pv
+          JOIN inventory i ON pv.variant_id = i.variant_id
+          WHERE pv.status <> 'archived'
+          GROUP BY pv.product_id
+        ) stock_info ON p.product_id = stock_info.product_id
+        LEFT JOIN (
+          SELECT product_id, AVG(rating) as avg_rating
+          FROM reviews
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id
+        WHERE pv1.product_id = ?
+          AND p.product_id != ?
+          AND p.product_status = 'active'
+        GROUP BY p.product_id
+        HAVING co_purchase_count >= 3
+        ORDER BY co_purchase_count DESC, (IFNULL(stock_info.total_stock, 0) > 0) DESC
+        LIMIT 20
+      `, [targetId, targetId]);
+
+      // ─── 2. Customers Also Viewed (CAV) ───
+      const cavRows = await database.all(`
+        SELECT p.product_id, p.product_name, p.selling_price, p.mrp, p.image_url, p.brand, p.category_id,
+               c.category_name, p.badge, p.product_status, IFNULL(stock_info.total_stock, 0) AS total_stock,
+               IFNULL(r.avg_rating, 0.0) AS average_rating,
+               COUNT(DISTINCT ae2.session_id) AS co_view_count
+        FROM analytics_events ae1
+        JOIN analytics_events ae2 ON ae1.session_id = ae2.session_id
+        JOIN products p ON ae2.product_id = p.product_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(i.available_stock) as total_stock
+          FROM product_variants pv
+          JOIN inventory i ON pv.variant_id = i.variant_id
+          WHERE pv.status <> 'archived'
+          GROUP BY pv.product_id
+        ) stock_info ON p.product_id = stock_info.product_id
+        LEFT JOIN (
+          SELECT product_id, AVG(rating) as avg_rating
+          FROM reviews
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id
+        WHERE ae1.event_name = 'product_view'
+          AND ae2.event_name = 'product_view'
+          AND ae1.product_id = ?
+          AND p.product_id != ?
+          AND p.product_status = 'active'
+        GROUP BY p.product_id
+        HAVING co_view_count >= 5
+        ORDER BY co_view_count DESC, (IFNULL(stock_info.total_stock, 0) > 0) DESC
+        LIMIT 20
+      `, [targetId, targetId]);
+
+      // ─── 3. Similar Products ───
+      const similarRows = await database.all(`
+        SELECT p.product_id, p.product_name, p.selling_price, p.mrp, p.image_url, p.brand, p.category_id,
+               c.category_name, p.badge, p.product_status, IFNULL(stock_info.total_stock, 0) AS total_stock,
+               IFNULL(r.avg_rating, 0.0) AS average_rating,
+               IFNULL(sales.quantity_sold, 0) AS quantity_sold
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(i.available_stock) as total_stock
+          FROM product_variants pv
+          JOIN inventory i ON pv.variant_id = i.variant_id
+          WHERE pv.status <> 'archived'
+          GROUP BY pv.product_id
+        ) stock_info ON p.product_id = stock_info.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(oi.quantity) as quantity_sold
+          FROM order_items oi
+          JOIN product_variants pv ON oi.variant_id = pv.variant_id
+          GROUP BY pv.product_id
+        ) sales ON p.product_id = sales.product_id
+        LEFT JOIN (
+          SELECT product_id, AVG(rating) as avg_rating
+          FROM reviews
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id
+        WHERE p.category_id = ?
+          AND p.product_id != ?
+          AND p.product_status = 'active'
+        ORDER BY 
+          (IFNULL(stock_info.total_stock, 0) > 0) DESC,
+          ABS(p.selling_price - ?) ASC,
+          (CASE WHEN p.brand = ? THEN 0 ELSE 1 END) ASC,
+          average_rating DESC,
+          quantity_sold DESC
+        LIMIT 20
+      `, [currentProduct.category_id, targetId, currentProduct.selling_price, currentProduct.brand]);
+
+      // ─── 4. Trending Products ───
+      const trendingRows = await database.all(`
+        SELECT p.product_id, p.product_name, p.selling_price, p.mrp, p.image_url, p.brand, p.category_id,
+               c.category_name, p.badge, p.product_status, IFNULL(stock_info.total_stock, 0) AS total_stock,
+               IFNULL(r.avg_rating, 0.0) AS average_rating,
+               (IFNULL(v.views_count, 0) * 1 +
+                IFNULL(rc.click_count, 0) * 2 +
+                IFNULL(atc.cart_count, 0) * 4 +
+                IFNULL(pur.purchase_count, 0) * 8) AS trending_score
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN (
+          SELECT pv.product_id, SUM(i.available_stock) as total_stock
+          FROM product_variants pv
+          JOIN inventory i ON pv.variant_id = i.variant_id
+          WHERE pv.status <> 'archived'
+          GROUP BY pv.product_id
+        ) stock_info ON p.product_id = stock_info.product_id
+        LEFT JOIN (
+          SELECT product_id, AVG(rating) as avg_rating
+          FROM reviews
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id
+        LEFT JOIN (
+          SELECT product_id, COUNT(*) AS views_count 
+          FROM analytics_events 
+          WHERE event_name = 'product_view' 
+          GROUP BY product_id
+        ) v ON p.product_id = v.product_id
+        LEFT JOIN (
+          SELECT product_id, COUNT(*) AS click_count 
+          FROM analytics_events 
+          WHERE event_name = 'recommendation_click' 
+          GROUP BY product_id
+        ) rc ON p.product_id = rc.product_id
+        LEFT JOIN (
+          SELECT product_id, COUNT(*) AS cart_count 
+          FROM analytics_events 
+          WHERE event_name = 'add_to_cart' 
+          GROUP BY product_id
+        ) atc ON p.product_id = atc.product_id
+        LEFT JOIN (
+          SELECT pv.product_id, COUNT(*) AS purchase_count 
+          FROM order_items oi
+          JOIN product_variants pv ON oi.variant_id = pv.variant_id
+          GROUP BY pv.product_id
+        ) pur ON p.product_id = pur.product_id
+        WHERE p.product_status = 'active'
+          AND p.product_id != ?
+        ORDER BY 
+          (IFNULL(stock_info.total_stock, 0) > 0) DESC,
+          trending_score DESC
+        LIMIT 20
+      `, [targetId]);
+
+      res.json({
+        frequently_bought_together: mapProductDetails(fbtRows),
+        customers_also_viewed: mapProductDetails(cavRows),
+        similar_products: mapProductDetails(similarRows),
+        trending_products: mapProductDetails(trendingRows)
+      });
+    } catch (err) {
+      console.error('[productController] getRecommendations error:', err.message);
       res.status(500).json({ message: 'Database error: ' + err.message });
     }
   },

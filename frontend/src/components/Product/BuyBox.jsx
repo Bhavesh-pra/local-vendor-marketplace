@@ -12,6 +12,7 @@ export default function BuyBox({
   onBuyNow,
   isAdding = false,
   shipping,
+  onAddToWishlist,
 }) {
   const activePrice = selectedVariant ? selectedVariant.selling_price : product.selling_price;
   const activeMrp = selectedVariant ? selectedVariant.mrp : product.mrp;
@@ -88,7 +89,11 @@ export default function BuyBox({
         <button
           type="button"
           className="buy-box-btn wishlist-btn-flat"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onAddToWishlist) onAddToWishlist();
+          }}
         >
           ♡ Add to Wishlist
         </button>

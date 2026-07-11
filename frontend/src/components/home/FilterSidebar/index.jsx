@@ -14,19 +14,6 @@ const RATING_OPTIONS = [
   { label: '3★ & above', value: 3 },
 ];
 
-/**
- * FilterSidebar — collapsible checkbox-based filter panel.
- *
- * @param {string|null}  priceRange
- * @param {Function}     onPriceRangeChange
- * @param {number|null}  minRating
- * @param {Function}     onRatingChange
- * @param {boolean}      inStock
- * @param {Function}     onInStockChange
- * @param {Function}     onClearAll
- * @param {boolean}      isOpen       Mobile visibility
- * @param {Function}     onClose      Mobile close
- */
 export function FilterSidebar({
   desktopVisible = true,
   priceRange,
@@ -38,8 +25,19 @@ export function FilterSidebar({
   onClearAll,
   isOpen,
   onClose,
+  
+  // Category & Brand Facets
+  categories = [],
+  activeCategory = 'all',
+  onCategoryChange,
+  brands = [],
+  activeBrand = '',
+  onBrandChange,
+  loadingFacets = false,
 }) {
   const [openSections, setOpenSections] = useState({
+    categories: true,
+    brands: true,
     price: true,
     rating: true,
     availability: true,
@@ -49,14 +47,23 @@ export function FilterSidebar({
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Count active filters
   const activeCount = [
-    priceRange != null,
+    activeCategory !== 'all',
+    activeBrand !== '',
+    priceRange != null && priceRange !== '',
     minRating != null,
     inStock,
   ].filter(Boolean).length;
 
   const hasFilters = activeCount > 0;
+
+  const handleCategoryClick = (slug) => {
+    onCategoryChange(activeCategory === slug ? 'all' : slug);
+  };
+
+  const handleBrandClick = (brandName) => {
+    onBrandChange(activeBrand === brandName ? '' : brandName);
+  };
 
   return (
     <>
@@ -97,9 +104,104 @@ export function FilterSidebar({
               onClick={onClose}
               aria-label="Close filters"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
+        </div>
+
+        {/* ── Category Section ── */}
+        <div className="filter-sidebar__section">
+          <button
+            type="button"
+            className="filter-sidebar__section-header"
+            onClick={() => toggleSection('categories')}
+            aria-expanded={openSections.categories}
+          >
+            <span>Category</span>
+            <ChevronDown
+              size={14}
+              className={`filter-sidebar__chevron ${openSections.categories ? 'filter-sidebar__chevron--open' : ''}`}
+            />
+          </button>
+          {openSections.categories && (
+            <ul className="filter-sidebar__option-list">
+              <li>
+                <label className="filter-sidebar__option">
+                  <input
+                    type="radio"
+                    name="category-filter"
+                    className="filter-sidebar__radio"
+                    checked={activeCategory === 'all'}
+                    onChange={() => onCategoryChange('all')}
+                  />
+                  <span className="filter-sidebar__option-label">All Categories</span>
+                </label>
+              </li>
+              {categories.map((cat) => (
+                <li key={cat.id}>
+                  <label className="filter-sidebar__option">
+                    <input
+                      type="radio"
+                      name="category-filter"
+                      className="filter-sidebar__radio"
+                      checked={activeCategory === cat.slug}
+                      onChange={() => handleCategoryClick(cat.slug)}
+                    />
+                    <span className="filter-sidebar__option-label">{cat.name}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* ── Brand Section ── */}
+        <div className="filter-sidebar__section">
+          <button
+            type="button"
+            className="filter-sidebar__section-header"
+            onClick={() => toggleSection('brands')}
+            aria-expanded={openSections.brands}
+          >
+            <span>Brand</span>
+            <ChevronDown
+              size={14}
+              className={`filter-sidebar__chevron ${openSections.brands ? 'filter-sidebar__chevron--open' : ''}`}
+            />
+          </button>
+          {openSections.brands && (
+            <>
+              {loadingFacets ? (
+                <div className="filter-sidebar__skeleton-wrapper" aria-label="Loading brands">
+                  <div className="filter-sidebar__skeleton-line shimmer" style={{ width: '85%', height: '14px', margin: '8px 0' }} />
+                  <div className="filter-sidebar__skeleton-line shimmer" style={{ width: '65%', height: '14px', margin: '8px 0' }} />
+                  <div className="filter-sidebar__skeleton-line shimmer" style={{ width: '75%', height: '14px', margin: '8px 0' }} />
+                </div>
+              ) : (
+                <ul className="filter-sidebar__option-list">
+                  {brands.map((br) => {
+                    const isDisabled = br.count === 0;
+                    return (
+                      <li key={br.name}>
+                        <label className={`filter-sidebar__option ${isDisabled ? 'filter-sidebar__option--disabled' : ''}`}>
+                          <input
+                            type="radio"
+                            name="brand-filter"
+                            className="filter-sidebar__radio"
+                            checked={activeBrand === br.name}
+                            onChange={() => handleBrandClick(br.name)}
+                          />
+                          <span className="filter-sidebar__option-label">
+                            {br.name} <span className="filter-sidebar__facet-count">({br.count})</span>
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
+          )}
         </div>
 
         {/* ── Price Section ── */}

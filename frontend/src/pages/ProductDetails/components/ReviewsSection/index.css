@@ -198,3 +198,47 @@
   justify-content: space-between;
   align-items: center;
 }
+
+/* ── Reviews Pagination Controls ─── */
+.reviews-section__pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px dashed var(--color-border-subtle);
+  max-width: 800px;
+}
+
+.reviews-section__pagination-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.reviews-section__load-btn {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-height: 44px; /* Touch target minimum */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.reviews-section__load-btn:hover {
+  border-color: var(--color-text-brand);
+  color: var(--color-text-brand);
+  background: rgba(234, 179, 8, 0.04);
+}
+
+.reviews-section__load-btn:active {
+  transform: scale(0.98);
+}

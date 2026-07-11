@@ -11,7 +11,7 @@ export function CartRecommendations({ cartItems, onAddToCart, isAddingProductId 
     async function loadRecommendations() {
       try {
         const catalog = await getProducts();
-        const allProducts = Array.isArray(catalog) ? catalog : catalog?.products ?? [];
+        const allProducts = Array.isArray(catalog) ? catalog : (catalog?.items ?? catalog?.products ?? []);
 
         // 1. Get IDs of products already in cart to exclude
         const cartProductIds = new Set(cartItems.map(item => item.product_id));

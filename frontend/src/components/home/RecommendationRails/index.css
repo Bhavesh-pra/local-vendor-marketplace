@@ -1,0 +1,100 @@
+.recommendation-rails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-border-subtle);
+  width: 100%;
+}
+
+.recommendation-rails__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.recommendation-rails__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-heading);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.recommendation-rails__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* Card hover and interactive feedback */
+.recommendation-rails__grid > * {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+}
+
+.recommendation-rails__grid > *:hover {
+  transform: translateY(-4px);
+}
+
+.recommendation-rails__grid > *:active {
+  transform: translateY(-1px);
+}
+
+/* Shimmer Loading State styles */
+.recommendation-rails__shimmer-title {
+  width: 220px;
+  height: 24px;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-1);
+  animation: rec-pulse 2s infinite ease-in-out;
+}
+
+.recommendation-rails__shimmer-card {
+  height: 360px;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-lg);
+  animation: rec-pulse 2s infinite ease-in-out;
+}
+
+@keyframes rec-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Responsive breakdowns */
+@media (max-width: 992px) {
+  .recommendation-rails__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* Hide the 4th item in grid on tablet */
+  .recommendation-rails__grid > *:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .recommendation-rails__grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-1) var(--space-3) var(--space-1);
+    scrollbar-width: none; /* Hide standard Firefox scrollbar */
+  }
+  .recommendation-rails__grid::-webkit-scrollbar {
+    display: none; /* Hide Chrome/Safari scrollbar */
+  }
+  .recommendation-rails__grid > * {
+    flex: 0 0 240px;
+    scroll-snap-align: start;
+    transform: none !important; /* Disable vertical offset on mobile swipes */
+  }
+}

@@ -89,6 +89,10 @@
   }
 }
 
+.home-sort-bar__mobile-btn {
+  display: none;
+}
+
 /* ── Mobile ≤ 992px — sidebar becomes a drawer ───────────── */
 @media (max-width: 992px) {
   .home-layout,
@@ -98,7 +102,63 @@
 }
 
 @media (max-width: 767px) {
-  .home-sort-bar__select {
-    height: 44px;
+  .home-sort-bar__select-wrap {
+    display: none;
+  }
+
+  .home-sort-bar__mobile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    color: var(--color-text-body);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    min-height: 44px;
+    padding-inline: var(--space-4);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--easing-out);
+  }
+
+  .home-sort-bar__mobile-btn:hover {
+    border-color: var(--color-text-brand);
+    color: var(--color-text-brand);
+    background: rgba(234, 179, 8, 0.04);
+  }
+}
+
+/* Search Intent Banner Notification styles */
+.search-intent-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-left: 4px solid var(--color-text-brand);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+  margin-bottom: var(--space-3);
+  animation: slide-down 0.2s ease-out;
+}
+
+.search-intent-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-brand);
+  flex-shrink: 0;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -4,6 +4,7 @@ import { Button } from '../../ui/Button/index.jsx';
 import { formatCurrency } from '../../../utils/formatters.js';
 import { productPath } from '../../../constants/routes.js';
 import { SHIPPING_THRESHOLD } from '../../../constants/pricing.js';
+import { useTelemetry } from '../../../hooks/useTelemetry.js';
 import './index.css';
 
 /**
@@ -16,7 +17,8 @@ import './index.css';
  *   - Muted product description (clamped)
  *   - Footer row: Price label + value on left, Add to Cart button on right.
  */
-export function ProductCard({ product, onAddToCart, isAdding }) {
+export function ProductCard({ product, onAddToCart, isAdding, onClick }) {
+  const { trackEvent } = useTelemetry();
   const {
     product_id,
     product_name,
@@ -65,13 +67,17 @@ export function ProductCard({ product, onAddToCart, isAdding }) {
         className="product-card__wishlist-btn" 
         title="Add to Wishlist" 
         type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onClick={(e) => { 
+          e.preventDefault(); 
+          e.stopPropagation(); 
+          trackEvent('wishlist_add', { productId: product_id });
+        }}
       >
         <span className="heart-icon">♡</span>
       </button>
 
       {/* Image Container */}
-      <Link to={productPath(product_id)} className="product-card__image-link" tabIndex={-1} aria-hidden="true">
+      <Link to={productPath(product_id)} className="product-card__image-link" tabIndex={-1} aria-hidden="true" onClick={onClick}>
         <div className="product-card__image-wrap">
           <ImageWithFallback
             src={image_url}
@@ -84,7 +90,7 @@ export function ProductCard({ product, onAddToCart, isAdding }) {
       {/* Body */}
       <div className="product-card__body">
         {/* Title */}
-        <Link to={productPath(product_id)} className="product-card__name-link stretched-link">
+        <Link to={productPath(product_id)} className="product-card__name-link stretched-link" onClick={onClick}>
           <h2 className="product-card__name">{product_name}</h2>
         </Link>
 

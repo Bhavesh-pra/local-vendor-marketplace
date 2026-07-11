@@ -203,6 +203,105 @@ const initDb = async () => {
     console.error("Error back-filling MRP values:", err.message);
   }
 
+  // ─── Phase 4A FTS5 Search Initialization & Triggers ───────────────────────
+  try {
+    // Create FTS5 virtual table
+    await database.run(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS products_fts USING fts5(
+        product_id UNINDEXED,
+        product_name,
+        short_description,
+        description,
+        brand,
+        category_name
+      )
+    `);
+
+    // Create sync triggers
+    await database.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_products_insert AFTER INSERT ON products
+      BEGIN
+        INSERT INTO products_fts(product_id, product_name, short_description, description, brand, category_name)
+        VALUES (
+          new.product_id,
+          new.product_name,
+          IFNULL(new.short_description, ''),
+          new.description,
+          IFNULL(new.brand, ''),
+          IFNULL((SELECT category_name FROM categories WHERE category_id = new.category_id), '')
+        );
+      END;
+    `);
+
+    await database.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_products_update AFTER UPDATE ON products
+      BEGIN
+        UPDATE products_fts
+        SET product_name = new.product_name,
+            short_description = IFNULL(new.short_description, ''),
+            description = new.description,
+            brand = IFNULL(new.brand, ''),
+            category_name = IFNULL((SELECT category_name FROM categories WHERE category_id = new.category_id), '')
+        WHERE product_id = old.product_id;
+      END;
+    `);
+
+    await database.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_products_delete AFTER DELETE ON products
+      BEGIN
+        DELETE FROM products_fts WHERE product_id = old.product_id;
+      END;
+    `);
+
+    await database.run(`
+      CREATE TRIGGER IF NOT EXISTS trg_categories_update AFTER UPDATE OF category_name ON categories
+      BEGIN
+        UPDATE products_fts
+        SET category_name = new.category_name
+        WHERE product_id IN (SELECT product_id FROM products WHERE category_id = new.category_id);
+      END;
+    `);
+
+    // Self-healing FTS5 backfill logic
+    await database.run(`
+      INSERT INTO products_fts(product_id, product_name, short_description, description, brand, category_name)
+      SELECT p.product_id, p.product_name, IFNULL(p.short_description, ''), p.description, IFNULL(p.brand, ''), IFNULL(c.category_name, '')
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      WHERE p.product_id NOT IN (SELECT product_id FROM products_fts)
+    `);
+
+    console.log("FTS5 table and triggers initialized successfully.");
+  } catch (err) {
+    console.error("Error setting up FTS5 search index:", err.message);
+  }
+
+  // ─── Phase 4C Telemetry Initialization ─────────────────────────────────────
+  try {
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS analytics_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_name TEXT NOT NULL,
+        user_id INTEGER NULL,
+        session_id TEXT NOT NULL,
+        product_id INTEGER NULL,
+        category_id INTEGER NULL,
+        metadata TEXT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indices to optimize queries in Phase 4D
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_analytics_events_session_id ON analytics_events(session_id)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_analytics_events_product_id ON analytics_events(product_id)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_analytics_events_event_name ON analytics_events(event_name)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at)`);
+
+    console.log("Telemetry database table and indices initialized successfully.");
+  } catch (err) {
+    console.error("Error setting up telemetry table:", err.message);
+  }
+
   return database;
 };
 

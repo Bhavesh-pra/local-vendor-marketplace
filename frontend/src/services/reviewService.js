@@ -4,8 +4,8 @@ import axiosInstance from '../lib/axios.js';
  * Fetch reviews for a product
  * @param {number|string} productId
  */
-export async function getReviews(productId) {
-  const response = await axiosInstance.get(`/reviews/${productId}`);
+export async function getReviews(productId, params = {}) {
+  const response = await axiosInstance.get(`/reviews/${productId}`, { params });
   return response.data;
 }
 

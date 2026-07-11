@@ -76,6 +76,7 @@ function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path={ROUTES.HOME}            element={<Home />} />
+      <Route path="/products"              element={<Home />} />
       <Route path={ROUTES.PRODUCT_DETAILS} element={<LazyRoute element={LazyProductDetails} />} />
       <Route path={ROUTES.LOGIN}           element={<LazyRoute element={LazyLogin} />} />
       <Route path={ROUTES.REGISTER}        element={<LazyRoute element={LazyRegister} />} />

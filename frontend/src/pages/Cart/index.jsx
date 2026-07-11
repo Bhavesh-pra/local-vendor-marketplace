@@ -85,7 +85,7 @@ export default function Cart() {
 
       const rawItems = Array.isArray(cartItems) ? cartItems : [];
       const rawSaved = Array.isArray(savedList) ? savedList : [];
-      const products = Array.isArray(productsList) ? productsList : productsList?.products ?? [];
+      const products = Array.isArray(productsList) ? productsList : (productsList?.items ?? productsList?.products ?? []);
 
       // 3. Merge cart item unit details with product catalog data
       const mergedItems = rawItems.map((item) => {
