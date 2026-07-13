@@ -122,6 +122,52 @@
   color: var(--color-text-heading);
 }
 
+.order-items-list-card__eligibility {
+  margin-top: var(--space-1);
+}
+
+.order-items-list-card__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.order-items-list-card__action-btn {
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold, 600);
+  background: var(--color-surface-raised, #16181f);
+  border: 1px solid var(--color-border-default, #2d3139);
+  border-radius: var(--radius-md, 6px);
+  color: var(--color-text-body, #d1d5db);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.order-items-list-card__action-btn:hover {
+  background: var(--color-brand-primary, #6366f1);
+  color: #ffffff;
+  border-color: var(--color-brand-primary, #6366f1);
+}
+
+.order-items-list-card__eligibility-text {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+.order-items-list-card__eligibility-text.text-success {
+  color: var(--color-feedback-success, #22C55E) !important;
+}
+
+.order-items-list-card__eligibility-text.text-danger {
+  color: var(--color-feedback-error, #EF4444) !important;
+}
+
+.order-items-list-card__eligibility-text.text-muted {
+  color: var(--color-text-muted, #9CA3AF) !important;
+}
+
 @media (max-width: 480px) {
   .order-items-list-card__item {
     align-items: flex-start;

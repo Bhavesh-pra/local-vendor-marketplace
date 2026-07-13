@@ -302,6 +302,362 @@ const initDb = async () => {
     console.error("Error setting up telemetry table:", err.message);
   }
 
+  // ─── Phase 5A Return Policies & Order delivered_at Initialization ─────────
+  try {
+    // 1. Create return_policies table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS return_policies (
+        policy_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT NOT NULL UNIQUE,
+        type        TEXT NOT NULL CHECK (type IN ('returnable', 'replacement_only', 'non_returnable')),
+        days        INTEGER NOT NULL CHECK (days >= 0),
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    // 2. Add return_policy_id column to products table
+    await addColumnIfNotExists('products', 'return_policy_id', 'INTEGER REFERENCES return_policies(policy_id) ON UPDATE CASCADE ON DELETE SET NULL');
+
+    // 3. Add delivered_at column to orders table
+    await addColumnIfNotExists('orders', 'delivered_at', 'DATETIME NULL');
+
+    // 4. Seed default return policies
+    const policiesCount = await database.get('SELECT COUNT(*) as count FROM return_policies');
+    if (policiesCount.count === 0) {
+      await database.run(`
+        INSERT INTO return_policies (name, type, days) VALUES
+          ('Returnable 7 Days', 'returnable', 7),
+          ('Returnable 10 Days', 'returnable', 10),
+          ('Returnable 30 Days', 'returnable', 30),
+          ('Replacement Only 7 Days', 'replacement_only', 7),
+          ('Non Returnable', 'non_returnable', 0)
+      `);
+      console.log('Seeded default return policies.');
+    }
+
+    // 5. Self-healing: Back-fill return_policy_id for existing products
+    const defaultPolicy = await database.get("SELECT policy_id FROM return_policies WHERE name = 'Returnable 30 Days'");
+    if (defaultPolicy) {
+      await database.run(
+        "UPDATE products SET return_policy_id = ? WHERE return_policy_id IS NULL",
+        [defaultPolicy.policy_id]
+      );
+      console.log("Self-healed products return_policy_id backfill.");
+    }
+
+    // 6. Self-healing: Back-fill delivered_at for historical delivered orders
+    await database.run(`
+      UPDATE orders
+      SET delivered_at = COALESCE(
+        (SELECT created_at FROM order_events WHERE order_events.order_id = orders.order_id AND status = 'delivered' ORDER BY created_at DESC LIMIT 1),
+        updated_at
+      )
+      WHERE status = 'delivered' AND delivered_at IS NULL
+    `);
+    console.log("Self-healed orders delivered_at backfill.");
+
+    // 7. Create returns table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS returns (
+        return_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id           INTEGER NOT NULL,
+        order_item_id      INTEGER NOT NULL,
+        variant_id         INTEGER NOT NULL,
+        user_id            INTEGER NOT NULL,
+        request_type       TEXT NOT NULL CHECK (request_type IN ('return', 'replacement')),
+        reason_code        TEXT NOT NULL CHECK (reason_code IN ('DAMAGED_ITEM', 'WRONG_ITEM_RECEIVED', 'MISSING_PARTS', 'NOT_AS_DESCRIBED', 'QUALITY_ISSUE', 'SIZE_ISSUE', 'CHANGED_MIND', 'OTHER')),
+        reason_description TEXT,
+        status             TEXT NOT NULL DEFAULT 'REQUESTED' CHECK (status IN ('REQUESTED', 'APPROVED', 'REJECTED', 'PICKUP_SCHEDULED', 'PICKED_UP', 'RECEIVED', 'REFUNDED', 'REPLACEMENT_SHIPPED', 'REFUND_COMPLETED', 'REPLACEMENT_COMPLETED')),
+        admin_notes        TEXT,
+        requested_at       TEXT,
+        approved_at        TEXT,
+        rejected_at        TEXT,
+        completed_at       TEXT,
+        created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at         TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (order_id) REFERENCES orders(order_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (order_item_id) REFERENCES order_items(order_item_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // 8. Create return_events table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS return_events (
+        event_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        return_id        INTEGER NOT NULL,
+        previous_status  TEXT,
+        new_status       TEXT NOT NULL,
+        actor_user_id    INTEGER,
+        actor_type       TEXT NOT NULL CHECK (actor_type IN ('customer', 'admin', 'system')),
+        notes            TEXT,
+        created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (return_id) REFERENCES returns(return_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // 9. Create indexes for performance and uniqueness
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_returns_order_variant ON returns(order_id, variant_id)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_return_events_return_id ON return_events(return_id)`);
+    
+    // Concurrency guard: partial unique index for active returns
+    await database.run(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_returns_active_unique
+      ON returns(order_id, variant_id)
+      WHERE status <> 'REJECTED'
+      AND status <> 'REFUND_COMPLETED'
+      AND status <> 'REPLACEMENT_COMPLETED'
+    `);
+
+    console.log("Phase 5B returns database structures initialized successfully.");
+
+    // ─── Phase 5C Verified Buyer & Review Trust Schema Update ─────────────────
+    const reviewsTableInfo = await database.all("PRAGMA table_info(reviews)");
+    const hasOrderItemId = reviewsTableInfo.some(col => col.name === 'order_item_id');
+
+    if (!hasOrderItemId) {
+      console.log("Migrating reviews table for Phase 5C...");
+      const tableCheck = await database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='reviews'");
+      
+      if (tableCheck) {
+        await database.run("ALTER TABLE reviews RENAME TO reviews_old");
+      }
+
+      await database.run(`
+        CREATE TABLE reviews (
+          review_id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id           INTEGER NOT NULL,
+          user_id              INTEGER NOT NULL,
+          order_item_id        INTEGER,
+          rating               INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+          title                TEXT,
+          comment              TEXT,
+          is_verified_purchase INTEGER NOT NULL DEFAULT 1 CHECK (is_verified_purchase IN (0, 1)),
+          helpful_count        INTEGER NOT NULL DEFAULT 0,
+          status               TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('approved', 'hidden')),
+          created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at           TEXT NOT NULL DEFAULT (datetime('now')),
+          FOREIGN KEY (product_id) REFERENCES products(product_id) ON UPDATE CASCADE ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+          FOREIGN KEY (order_item_id) REFERENCES order_items(order_item_id) ON UPDATE CASCADE ON DELETE CASCADE
+        )
+      `);
+
+      if (tableCheck) {
+        await database.run(`
+          INSERT INTO reviews (product_id, user_id, rating, comment, is_verified_purchase, created_at, updated_at)
+          SELECT product_id, user_id, rating, comment, 0, created_at, updated_at
+          FROM reviews_old
+        `);
+        await database.run("DROP TABLE reviews_old");
+        console.log("Migrated historical reviews to new reviews schema.");
+      }
+    }
+
+    // Create review_images table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS review_images (
+        image_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+        review_id   INTEGER NOT NULL,
+        image_url   TEXT NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // Create review_helpful_votes table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS review_helpful_votes (
+        vote_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+        review_id   INTEGER NOT NULL,
+        user_id     INTEGER NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        UNIQUE (review_id, user_id)
+      )
+    `);
+
+    // Create review_moderation_logs table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS review_moderation_logs (
+        log_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        review_id        INTEGER NOT NULL,
+        previous_status  TEXT,
+        new_status       TEXT NOT NULL,
+        actor_user_id    INTEGER NOT NULL,
+        notes            TEXT,
+        created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (actor_user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // Create indexes for review trust tables
+    await database.run(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_order_item_user
+      ON reviews(order_item_id, user_id)
+      WHERE order_item_id IS NOT NULL
+    `);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_review_images_review_id ON review_images(review_id)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_review_helpful_votes_review_user ON review_helpful_votes(review_id, user_id)`);
+
+    // Run historical backfill verifications
+    await database.run(`
+      UPDATE reviews
+      SET is_verified_purchase = 1,
+          order_item_id = (
+            SELECT oi.order_item_id
+            FROM orders o
+            JOIN order_items oi ON o.order_id = oi.order_id
+            JOIN product_variants pv ON oi.variant_id = pv.variant_id
+            WHERE o.user_id = reviews.user_id
+              AND pv.product_id = reviews.product_id
+              AND o.status = 'delivered'
+              AND datetime(reviews.created_at) >= datetime(o.delivered_at)
+            LIMIT 1
+          )
+      WHERE EXISTS (
+        SELECT 1
+        FROM orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN product_variants pv ON oi.variant_id = pv.variant_id
+        WHERE o.user_id = reviews.user_id
+          AND pv.product_id = reviews.product_id
+          AND o.status = 'delivered'
+          AND datetime(reviews.created_at) >= datetime(o.delivered_at)
+      )
+    `);
+    console.log("Self-healed historical reviews verification backfill.");
+
+    console.log("Phase 5C reviews database structures initialized successfully.");
+  } catch (err) {
+    console.error("Error setting up Phase 5C reviews database structures:", err.message);
+  }
+
+  // ─── Phase 5D: Coupons & Promotions Engine ────────────────────────────────
+  try {
+    // 1. Alter orders table to add coupon columns if missing
+    const ordersInfo = await database.all("PRAGMA table_info(orders)");
+    const ordersColumns = ordersInfo.map(col => col.name);
+
+    if (!ordersColumns.includes('coupon_id')) {
+      await database.run("ALTER TABLE orders ADD COLUMN coupon_id INTEGER DEFAULT NULL");
+      console.log("Column coupon_id added to orders");
+    }
+    if (!ordersColumns.includes('discount_amount')) {
+      await database.run("ALTER TABLE orders ADD COLUMN discount_amount REAL DEFAULT 0");
+      console.log("Column discount_amount added to orders");
+    }
+    if (!ordersColumns.includes('coupon_code_snapshot')) {
+      await database.run("ALTER TABLE orders ADD COLUMN coupon_code_snapshot TEXT DEFAULT NULL");
+      console.log("Column coupon_code_snapshot added to orders");
+    }
+
+    // 2. Create coupons table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS coupons (
+        coupon_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        coupon_code TEXT UNIQUE NOT NULL,
+        coupon_type TEXT NOT NULL CHECK (coupon_type IN ('fixed', 'percentage', 'free_shipping')),
+        discount_value REAL NOT NULL,
+        min_order_value REAL DEFAULT 0,
+        max_discount_amount REAL,
+        usage_limit INTEGER,
+        per_user_limit INTEGER DEFAULT 1,
+        expiration_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    // 3. Create coupon_redemptions table (immutable)
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS coupon_redemptions (
+        redemption_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        coupon_id INTEGER NOT NULL,
+        order_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        discount_amount REAL NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        FOREIGN KEY (order_id) REFERENCES orders(order_id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE RESTRICT
+      )
+    `);
+
+    // 4. Create coupon_categories table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS coupon_categories (
+        coupon_id INTEGER NOT NULL,
+        category_id INTEGER NOT NULL,
+        PRIMARY KEY (coupon_id, category_id),
+        FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (category_id) REFERENCES categories(category_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // 5. Create coupon_products table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS coupon_products (
+        coupon_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        PRIMARY KEY (coupon_id, product_id),
+        FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(product_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // 6. Create indexes
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_coupon ON coupon_redemptions(coupon_id)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_user_coupon ON coupon_redemptions(user_id, coupon_id)`);
+
+    // 7. Seed initial promo codes
+    await database.run(`
+      INSERT OR IGNORE INTO coupons (coupon_code, coupon_type, discount_value, min_order_value, max_discount_amount, per_user_limit, usage_limit)
+      VALUES ('WELCOME10', 'percentage', 10, 500, 200, 1, 1000)
+    `);
+    await database.run(`
+      INSERT OR IGNORE INTO coupons (coupon_code, coupon_type, discount_value, min_order_value, max_discount_amount, per_user_limit, usage_limit)
+      VALUES ('FLAT150', 'fixed', 150, 1000, NULL, 3, 500)
+    `);
+    await database.run(`
+      INSERT OR IGNORE INTO coupons (coupon_code, coupon_type, discount_value, min_order_value, max_discount_amount, per_user_limit, usage_limit)
+      VALUES ('FREESHIP', 'free_shipping', 0, 500, NULL, 5, 2000)
+    `);
+
+    console.log("Phase 5D coupons database structures initialized successfully.");
+  } catch (err) {
+    console.error("Error setting up Phase 5D coupons database structures:", err.message);
+  }
+
+  // ─── Phase 5E Notifications ──────────────────────────────────────────────
+  try {
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id         INTEGER NOT NULL,
+        type            TEXT NOT NULL,
+        title           TEXT NOT NULL,
+        message         TEXT NOT NULL,
+        metadata        TEXT,
+        event_key       TEXT UNIQUE NOT NULL,
+        is_read         INTEGER NOT NULL DEFAULT 0,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        read_at         TEXT DEFAULT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read)`);
+    console.log("Phase 5E notifications database structures initialized successfully.");
+  } catch (err) {
+    console.error("Error setting up Phase 5E notifications database structures:", err.message);
+  }
+
   return database;
 };
 

@@ -63,6 +63,7 @@ const createAdminRoutes = (adminController) => {
   // ─── Reviews ────────────────────────────────────────────────────────────
   router.get('/admin/reviews',     ...adminGuard, adminController.getAllReviews);
   router.delete('/admin/reviews/:id', ...adminGuard, adminController.deleteReview);
+  router.patch('/admin/reviews/:id/status', ...adminGuard, adminController.updateReviewStatus);
 
   return router;
 };

@@ -5,6 +5,7 @@ const { authenticateHeader } = require('../middleware/authenticate');
 const createCartRoutes = (cartController) => {
   router.post('/carts/', authenticateHeader, cartController.createCart);
   router.get('/carts/', authenticateHeader, cartController.getCarts);
+  router.get('/cart/summary', authenticateHeader, cartController.getCartSummary);
   router.post('/cart-items/', authenticateHeader, cartController.addCartItem);
   router.get('/cart-items', authenticateHeader, cartController.getCartItems);
   

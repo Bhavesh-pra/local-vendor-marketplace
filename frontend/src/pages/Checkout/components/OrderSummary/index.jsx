@@ -1,5 +1,4 @@
 import { Lock } from 'lucide-react';
-import { calculateShipping, calculateTotal } from '../../../../utils/pricing.js';
 import { formatCurrency } from '../../../../utils/formatters.js';
 import { ImageWithFallback } from '../../../../components/ui/ImageWithFallback/index.jsx';
 import { CheckoutTrustBar } from '../CheckoutTrustBar.jsx';
@@ -8,23 +7,21 @@ import './index.css';
 
 /**
  * OrderSummary — read-only display of products being ordered, subtotal, savings, shipping, and total.
- * Exposes the Place Order button, which is disabled until the form is valid.
  *
- * @param {object[]} items       Merged list of cart items
- * @param {number}   subtotal    Pre-calculated selling price subtotal of the cart items
- * @param {boolean}  submitting  Whether the place order request is in-flight
- * @param {boolean}  isValid     Whether all required checkout form fields are valid
+ * @param {object[]} items            Merged list of cart items
+ * @param {object}   summary          Backend computed order summary object
+ * @param {boolean}  submitting       Whether the place order request is in-flight
+ * @param {boolean}  isValid          Whether all required checkout form fields are valid
+ * @param {object|null} appliedCoupon Applied coupon details
  */
-export function OrderSummary({ items, subtotal, submitting, isValid }) {
-  // Authoritative calculations
-  const mrpSubtotal = items.reduce((sum, item) => sum + (item.mrp || item.unit_price) * item.quantity, 0);
-  const sellingSubtotal = subtotal;
-  const totalSavings = mrpSubtotal > sellingSubtotal ? mrpSubtotal - sellingSubtotal : 0;
+export function OrderSummary({ items, summary, submitting, isValid, appliedCoupon }) {
+  const mrpSubtotal = summary.original_price;
+  const sellingSubtotal = summary.subtotal;
+  const totalSavings = summary.discount_amount;
+  const shipping = summary.shipping_fee;
+  const discountAmount = summary.coupon_savings;
+  const total = summary.final_total;
 
-  const shipping = calculateShipping(sellingSubtotal, items);
-  const total = calculateTotal(sellingSubtotal, shipping, 0);
-
-  // Button text determination
   let buttonText = 'Place Order';
   if (submitting) {
     buttonText = 'Processing...';
@@ -76,19 +73,25 @@ export function OrderSummary({ items, subtotal, submitting, isValid }) {
       <div className="order-summary__breakdown">
         {/* Items Total (MRP) */}
         <div className="order-summary__row">
-          <span className="order-summary__label">Items Total (MRP)</span>
+          <span className="order-summary__label">Original Price (MRP)</span>
           <span className="order-summary__value">{formatCurrency(mrpSubtotal)}</span>
         </div>
 
-        {/* Savings */}
+        {/* Product Discount (Retail markdown) */}
         {totalSavings > 0 && (
           <div className="order-summary__row order-summary__row--savings">
-            <span className="order-summary__label">Discount / Savings</span>
+            <span className="order-summary__label">Product Discount</span>
             <span className="order-summary__value order-summary__value--savings">
               -{formatCurrency(totalSavings)}
             </span>
           </div>
         )}
+
+        {/* Subtotal */}
+        <div className="order-summary__row">
+          <span className="order-summary__label">Subtotal</span>
+          <span className="order-summary__value">{formatCurrency(sellingSubtotal)}</span>
+        </div>
 
         {/* Shipping */}
         <div className="order-summary__row">
@@ -101,6 +104,18 @@ export function OrderSummary({ items, subtotal, submitting, isValid }) {
             )}
           </span>
         </div>
+
+        {/* Coupon Savings */}
+        {discountAmount > 0 && (
+          <div className="order-summary__row order-summary__row--coupon">
+            <span className="order-summary__label">
+              Coupon ({appliedCoupon?.coupon_code})
+            </span>
+            <span className="order-summary__value order-summary__value--savings">
+              -{formatCurrency(discountAmount)}
+            </span>
+          </div>
+        )}
 
         <hr className="order-summary__divider" />
 
@@ -134,4 +149,3 @@ export function OrderSummary({ items, subtotal, submitting, isValid }) {
     </div>
   );
 }
-

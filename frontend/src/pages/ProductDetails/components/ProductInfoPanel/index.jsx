@@ -45,6 +45,9 @@ export function ProductInfoPanel({ product, loading, isAdding, onAddToCart, onBu
     product_status,
     description,
     reviews_count,
+    return_policy,
+    trust_metrics,
+    shipping
   } = product;
 
   const isOutOfStock = product_status === 'inactive' || product_status === 'out_of_stock';
@@ -190,20 +193,57 @@ export function ProductInfoPanel({ product, loading, isAdding, onAddToCart, onBu
         </div>
       </div>
 
-      {/* 7. Key Highlights */}
+      {/* 7. Key Highlights & Trust Signals */}
       <div className="product-info-panel__highlights">
         <span className="product-info-panel__highlight-item">
           <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
           <span>Secure Checkout</span>
         </span>
-        <span className="product-info-panel__highlight-item">
-          <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
-          <span>Fast Delivery</span>
-        </span>
+        
+        {/* Database-backed Shipping Capability Highlights */}
+        {shipping?.free_shipping === 1 && (
+          <span className="product-info-panel__highlight-item">
+            <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
+            <span>Free Shipping Available</span>
+          </span>
+        )}
+        {shipping?.cod_available === 1 && (
+          <span className="product-info-panel__highlight-item">
+            <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
+            <span>Cash on Delivery Available</span>
+          </span>
+        )}
+
         <span className="product-info-panel__highlight-item">
           <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
           <span>Verified Seller</span>
         </span>
+
+        {/* Dynamic Returns Trust */}
+        {return_policy && (
+          <span className={`product-info-panel__highlight-item product-info-panel__highlight-item--policy ${return_policy.type === 'non_returnable' ? 'text-danger' : 'text-success'}`}>
+            {return_policy.type === 'non_returnable' ? (
+              <span className="product-info-panel__highlight-icon-cross" aria-hidden="true">✕</span>
+            ) : (
+              <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
+            )}
+            <span>{return_policy.message}</span>
+          </span>
+        )}
+
+        {/* Dynamic Social Proof Signals (Real metrics only) */}
+        {trust_metrics?.purchases_count > 0 && (
+          <span className="product-info-panel__highlight-item product-info-panel__highlight-item--social">
+            <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
+            <span>{trust_metrics.purchases_count} Purchases Completed</span>
+          </span>
+        )}
+        {trust_metrics?.verified_reviews_count > 0 && (
+          <span className="product-info-panel__highlight-item product-info-panel__highlight-item--social">
+            <Check size={14} className="product-info-panel__highlight-icon" aria-hidden="true" />
+            <span>{trust_metrics.verified_reviews_count} Verified Reviews</span>
+          </span>
+        )}
       </div>
     </div>
   );

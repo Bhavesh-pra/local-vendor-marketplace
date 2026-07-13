@@ -452,6 +452,15 @@ const createCartController = (database) => ({
       res.status(500).json({ message: 'Database error: ' + err.message });
     }
   },
+  getCartSummary: async (req, res) => {
+    try {
+      const { calculateOrderSummary } = require('../services/pricingService');
+      const summary = await calculateOrderSummary(database, req.userId, req.query.coupon_code);
+      res.json(summary);
+    } catch (err) {
+      res.status(500).json({ message: 'Database error: ' + err.message });
+    }
+  },
 });
 
 module.exports = { createCartController };

@@ -1,0 +1,174 @@
+.return-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal, 1000);
+  padding: var(--space-4);
+}
+
+.return-modal-container {
+  background: var(--color-surface-raised, #16181f);
+  border: 1px solid var(--color-border-default, #2d3139);
+  border-radius: var(--radius-xl, 14px);
+  width: 100%;
+  max-width: 500px;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: modalEnter var(--duration-normal) var(--easing-out);
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.return-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border-subtle, #1e2128);
+}
+
+.return-modal-title {
+  font-size: var(--font-size-lg, 16px);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-heading, #ffffff);
+  margin: 0;
+}
+
+.return-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #9ca3af);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--duration-fast) var(--easing-out);
+  height: 44px;
+  width: 44px;
+}
+
+.return-modal-close-btn:hover {
+  color: var(--color-text-heading, #ffffff);
+}
+
+.return-modal-form {
+  padding: var(--space-5);
+}
+
+.return-modal-product-name {
+  font-size: var(--font-size-sm, 13px);
+  color: var(--color-text-body, #d1d5db);
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface-base, #0b0c10);
+  border: 1px solid var(--color-border-subtle, #1e2128);
+  border-radius: var(--radius-lg, 8px);
+}
+
+.return-modal-field {
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.return-modal-label {
+  font-size: var(--font-size-xs, 11px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-muted, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.return-modal-select,
+.return-modal-textarea {
+  width: 100%;
+  background: var(--color-surface-base, #0b0c10);
+  border: 1px solid var(--color-border-default, #2d3139);
+  border-radius: var(--radius-md, 6px);
+  padding: var(--space-3);
+  color: var(--color-text-heading, #ffffff);
+  font-size: var(--font-size-base, 14px);
+  transition: border-color var(--duration-fast) var(--easing-out);
+}
+
+.return-modal-select:focus,
+.return-modal-textarea:focus {
+  outline: none;
+  border-color: var(--color-brand-primary, #6366f1);
+}
+
+.return-modal-select {
+  height: 44px;
+  cursor: pointer;
+}
+
+.return-modal-textarea {
+  resize: vertical;
+}
+
+.return-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle, #1e2128);
+  padding-top: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.return-modal-btn {
+  height: 44px;
+  padding: 0 var(--space-5);
+  font-weight: var(--font-weight-semibold, 600);
+  font-size: var(--font-size-sm, 13px);
+  border-radius: var(--radius-lg, 8px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.return-modal-btn--secondary {
+  background: transparent;
+  border: 1px solid var(--color-border-default, #2d3139);
+  color: var(--color-text-body, #d1d5db);
+}
+
+.return-modal-btn--secondary:hover:not(:disabled) {
+  background: var(--color-surface-base, #0b0c10);
+  color: var(--color-text-heading, #ffffff);
+}
+
+.return-modal-btn--primary {
+  background: var(--color-brand-primary, #6366f1);
+  border: none;
+  color: #ffffff;
+}
+
+.return-modal-btn--primary:hover:not(:disabled) {
+  background: var(--color-brand-hover, #4f46e5);
+}
+
+.return-modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

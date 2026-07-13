@@ -63,6 +63,15 @@ export const adminService = {
       .patch(`${BASE}/requests/${id}`, { status, admin_note })
       .then((r) => r.data),
 
+  // ─── Returns ────────────────────────────────────────────────────────────
+  getAllReturns: () =>
+    axiosInstance.get('/admin/returns').then((r) => r.data),
+
+  updateReturnStatus: (return_id, status, admin_notes = '') =>
+    axiosInstance
+      .patch(`/admin/returns/${return_id}/status`, { status, admin_notes })
+      .then((r) => r.data),
+
   // ─── Customers ──────────────────────────────────────────────────────────
   getAllCustomers: () =>
     axiosInstance.get(`${BASE}/customers`).then((r) => r.data),
@@ -102,4 +111,14 @@ export const adminService = {
 
   resolveAlert: (alert_id) =>
     axiosInstance.patch(`${BASE}/alerts/${alert_id}/resolve`).then((r) => r.data),
+
+  // ─── Coupons ────────────────────────────────────────────────────────────
+  getAllCoupons: () =>
+    axiosInstance.get(`${BASE}/coupons`).then((r) => r.data),
+
+  createCoupon: (payload) =>
+    axiosInstance.post(`${BASE}/coupons`, payload).then((r) => r.data),
+
+  updateCoupon: (id, payload) =>
+    axiosInstance.patch(`${BASE}/coupons/${id}`, payload).then((r) => r.data),
 };

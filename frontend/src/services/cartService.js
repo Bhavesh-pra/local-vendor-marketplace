@@ -78,3 +78,12 @@ export async function moveSavedItemToCart(id) {
   const response = await axiosInstance.post(`/cart-items/saved/${id}/move`);
   return response.data;
 }
+
+/** Fetch active cart summary (subtotal, shipping, tax, discount, total) */
+export async function getCartSummary(couponCode = '') {
+  const url = couponCode
+    ? `/cart/summary?coupon_code=${encodeURIComponent(couponCode)}`
+    : '/cart/summary';
+  const response = await axiosInstance.get(url);
+  return response.data;
+}

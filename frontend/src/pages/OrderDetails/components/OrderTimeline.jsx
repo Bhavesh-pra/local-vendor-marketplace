@@ -26,7 +26,7 @@ export default function OrderTimeline({ status }) {
               <div className="order-timeline-widget__icon-wrap">
                 <CheckCircle2 size={16} />
               </div>
-              <span className="order-timeline-widget__label">Order Received</span>
+              <span className="order-timeline-widget__label">Order Placed</span>
             </div>
             <div className="order-timeline-widget__connector order-timeline-widget__connector--cancelled"></div>
             <div className="order-timeline-widget__step order-timeline-widget__step--cancelled">
@@ -51,7 +51,7 @@ export default function OrderTimeline({ status }) {
               <div className="order-timeline-widget__icon-wrap">
                 <CheckCircle2 size={16} />
               </div>
-              <span className="order-timeline-widget__label">Order Received</span>
+              <span className="order-timeline-widget__label">Order Placed</span>
             </div>
             <div className="order-timeline-widget__connector order-timeline-widget__connector--returned"></div>
             <div className="order-timeline-widget__step order-timeline-widget__step--returned">
@@ -67,9 +67,9 @@ export default function OrderTimeline({ status }) {
   }
 
   const steps = [
-    { label: 'Order received', icon: ShoppingBag, level: 1 },
-    { label: 'Preparing order', icon: Box, level: 2 },
-    { label: 'Shipped', icon: Truck, level: 3 },
+    { label: 'Order Placed', icon: ShoppingBag, level: 1 },
+    { label: 'Order Confirmed', icon: Box, level: 2 },
+    { label: 'Order Shipped', icon: Truck, level: 3 },
     { label: 'Delivered', icon: CheckCircle2, level: 4 }
   ];
 

@@ -224,7 +224,7 @@ export default function OrderDetails() {
             
             <OrderStatusMessage status={order.status} />
             
-            <OrderItemsList items={order.items} />
+            <OrderItemsList items={order.items} orderId={id} onRefresh={() => fetchOrderDetails(id, 0)} />
           </div>
 
           {/* Right Column: Sidebar ordered layout */}

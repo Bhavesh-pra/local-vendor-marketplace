@@ -360,7 +360,7 @@ export default function ProductDetails() {
 
         {/* Bottom Section: Badges and Detailed Tabs */}
         <div className="product-details-bottom">
-          <TrustBadges />
+          <TrustBadges product={product} />
 
           <ProductTabs
             description={product.description}

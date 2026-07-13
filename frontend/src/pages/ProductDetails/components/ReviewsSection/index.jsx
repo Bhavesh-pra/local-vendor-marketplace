@@ -1,37 +1,60 @@
-import { useState, useMemo, useEffect } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { MessageSquare, Star, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { StarRating } from '../../../../components/ui/StarRating/index.jsx';
 import { Skeleton } from '../../../../components/ui/Skeleton/index.jsx';
 import { EmptyState } from '../../../../components/ui/EmptyState/index.jsx';
 import { formatDate } from '../../../../utils/formatters.js';
+import { voteHelpful } from '../../../../services/reviewService.js';
+import { useToast } from '../../../../hooks/useToast.js';
+import { useAuth } from '../../../../hooks/useAuth.js';
 import './index.css';
 
 const SORT_OPTIONS = [
   { value: 'newest',   label: 'Newest' },
+  { value: 'oldest',   label: 'Oldest' },
   { value: 'highest',  label: 'Highest Rated' },
   { value: 'lowest',   label: 'Lowest Rated' },
+  { value: 'helpful',  label: 'Most Helpful' },
 ];
 
 /**
  * ReviewItem — individual review card with expandable comment, helpful button, and verified badge.
  */
 function ReviewItem({ review }) {
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [helpfulCount, setHelpfulCount] = useState(review.helpful_count ?? review.helpful ?? 0);
-  const [markedHelpful, setMarkedHelpful] = useState(false);
+  const [helpfulCount, setHelpfulCount] = useState(review.helpful_count ?? 0);
+  const [markedHelpful, setMarkedHelpful] = useState(!!review.user_marked_helpful);
+  const [activeImageIdx, setActiveImageIdx] = useState(null);
 
   const isLongText = review.comment && review.comment.length > 180;
   const displayComment = isLongText && !isExpanded
     ? `${review.comment.slice(0, 180)}...`
     : review.comment;
 
-  const handleHelpful = () => {
-    if (markedHelpful) {
-      setHelpfulCount(c => c - 1);
-    } else {
-      setHelpfulCount(c => c + 1);
+  const handleHelpful = async () => {
+    if (!isAuthenticated) {
+      showToast('info', 'Please log in to vote reviews as helpful.');
+      return;
     }
-    setMarkedHelpful(prev => !prev);
+    try {
+      const data = await voteHelpful(review.review_id);
+      setHelpfulCount(data.helpful_count);
+      setMarkedHelpful(data.user_marked_helpful);
+    } catch (err) {
+      showToast('error', 'Failed to update helpful vote');
+    }
+  };
+
+  const handlePrevImage = (e) => {
+    e.stopPropagation();
+    setActiveImageIdx((prev) => (prev > 0 ? prev - 1 : review.images.length - 1));
+  };
+
+  const handleNextImage = (e) => {
+    e.stopPropagation();
+    setActiveImageIdx((prev) => (prev < review.images.length - 1 ? prev + 1 : 0));
   };
 
   return (
@@ -42,10 +65,14 @@ function ReviewItem({ review }) {
           <StarRating value={review.rating} />
           <span className="reviews-section__date">{formatDate(review.created_at)}</span>
         </div>
-        {(review.verified || review.verified_purchase) && (
+        {review.verified_purchase && (
           <span className="reviews-section__verified-badge">✓ Verified Purchase</span>
         )}
       </header>
+
+      {review.title && (
+        <h4 className="reviews-section__item-title">{review.title}</h4>
+      )}
 
       <p className="reviews-section__comment">
         {displayComment}
@@ -60,6 +87,22 @@ function ReviewItem({ review }) {
         )}
       </p>
 
+      {/* Review Images thumbnail gallery */}
+      {review.images && review.images.length > 0 && (
+        <div className="reviews-section__media-gallery">
+          {review.images.map((img, idx) => (
+            <button
+              key={img.image_id}
+              type="button"
+              className="reviews-section__media-thumb"
+              onClick={() => setActiveImageIdx(idx)}
+            >
+              <img src={`${import.meta.env.VITE_API_BASE_URL || ''}${img.image_url}`} alt="Attached review media" />
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="reviews-section__item-footer">
         <button
           type="button"
@@ -70,15 +113,34 @@ function ReviewItem({ review }) {
           <span>👍 Helpful</span> {helpfulCount > 0 && <span className="helpful-count">({helpfulCount})</span>}
         </button>
       </div>
+
+      {/* Media Lightbox overlay dialog */}
+      {activeImageIdx !== null && (
+        <div className="reviews-lightbox" role="dialog" aria-modal="true" onClick={() => setActiveImageIdx(null)}>
+          <button className="reviews-lightbox__close" onClick={() => setActiveImageIdx(null)}>
+            <X size={24} />
+          </button>
+          {review.images.length > 1 && (
+            <>
+              <button className="reviews-lightbox__nav reviews-lightbox__nav--prev" onClick={handlePrevImage}>
+                <ChevronLeft size={28} />
+              </button>
+              <button className="reviews-lightbox__nav reviews-lightbox__nav--next" onClick={handleNextImage}>
+                <ChevronRight size={28} />
+              </button>
+            </>
+          )}
+          <div className="reviews-lightbox__content" onClick={(e) => e.stopPropagation()}>
+            <img src={`${import.meta.env.VITE_API_BASE_URL || ''}${review.images[activeImageIdx].image_url}`} alt="Enlarged review media" />
+          </div>
+        </div>
+      )}
     </article>
   );
 }
 
 /**
  * ReviewsSection — sortable list of product reviews.
- *
- * @param {object[]} reviews
- * @param {boolean}  loading
  */
 export function ReviewsSection({
   reviews,
@@ -94,10 +156,14 @@ export function ReviewsSection({
   const sortedReviews = useMemo(() => {
     const arr = [...reviews];
     switch (sortBy) {
+      case 'oldest':
+        return arr.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       case 'highest':
         return arr.sort((a, b) => b.rating - a.rating);
       case 'lowest':
         return arr.sort((a, b) => a.rating - b.rating);
+      case 'helpful':
+        return arr.sort((a, b) => (b.helpful_count || 0) - (a.helpful_count || 0));
       case 'newest':
       default:
         return arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

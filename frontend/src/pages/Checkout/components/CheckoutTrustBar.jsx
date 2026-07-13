@@ -1,13 +1,13 @@
 import React from 'react';
-import { ShieldCheck, RotateCcw, Award, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, Lock, CircleDollarSign, RotateCcw } from 'lucide-react';
 import './CheckoutTrustBar.css';
 
 export function CheckoutTrustBar() {
   const items = [
     { icon: ShieldCheck, label: 'Secure Checkout' },
+    { icon: Lock, label: 'Encrypted Payment' },
+    { icon: CircleDollarSign, label: 'No Hidden Charges' },
     { icon: RotateCcw, label: 'Easy Returns' },
-    { icon: Award, label: 'Trusted Sellers' },
-    { icon: ShieldAlert, label: 'Order Protection' },
   ];
 
   return (

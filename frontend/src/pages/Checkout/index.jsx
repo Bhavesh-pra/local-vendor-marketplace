@@ -5,16 +5,16 @@ import { CheckoutCustomerForm } from './components/CheckoutCustomerForm.jsx';
 import { CheckoutDeliveryCard } from './components/CheckoutDeliveryCard.jsx';
 import { CheckoutPaymentSelector } from './components/CheckoutPaymentSelector.jsx';
 import { OrderSummary } from './components/OrderSummary/index.jsx';
+import { CouponInput } from './components/CouponInput/index.jsx';
 import { Spinner } from '../../components/ui/Spinner/index.jsx';
 import { ErrorState } from '../../components/ui/ErrorState/index.jsx';
 import { useCart } from '../../hooks/useCart.js';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
-import { getCarts, getCartItemsById } from '../../services/cartService.js';
+import { getCarts, getCartItemsById, getCartSummary } from '../../services/cartService.js';
 import { getProducts } from '../../services/productService.js';
 import { placeOrder } from '../../services/orderService.js';
-import { calculateShipping, calculateTotal } from '../../utils/pricing.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { extractErrorMessage } from '../../utils/extractErrorMessage.js';
 import { useTelemetry } from '../../hooks/useTelemetry.js';
@@ -57,6 +57,20 @@ export default function Checkout() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [backendError, setBackendError] = useState(null);
+
+  // Coupon state — the applied coupon result from the backend, or null
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  // Pricing summary state (Phase 5F)
+  const [summary, setSummary] = useState({
+    original_price: 0,
+    subtotal: 0,
+    discount_amount: 0,
+    coupon_savings: 0,
+    shipping_fee: 0,
+    tax_amount: 0,
+    final_total: 0
+  });
 
   // Prefill customer profile & last used address from localStorage on mount
   useEffect(() => {
@@ -104,9 +118,10 @@ export default function Checkout() {
         return;
       }
 
-      const [cartItems, productsList] = await Promise.all([
+      const [cartItems, productsList, summaryData] = await Promise.all([
         getCartItemsById(activeCartId),
         getProducts(),
+        getCartSummary()
       ]);
 
       const rawItems = Array.isArray(cartItems) ? cartItems : [];
@@ -121,6 +136,7 @@ export default function Checkout() {
       });
 
       setItems(merged);
+      setSummary(summaryData);
     } catch (err) {
       setError(extractErrorMessage(err, 'Failed to load checkout details.'));
     } finally {
@@ -132,18 +148,35 @@ export default function Checkout() {
     fetchCheckoutData();
   }, [fetchCheckoutData]);
 
-  // Derive pricing values
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
-  }, [items]);
+  // ─── Coupon handlers ──────────────────────────────────────────────────
+  const handleApplyCoupon = useCallback(async (couponCode) => {
+    try {
+      const result = await getCartSummary(couponCode);
+      if (!result.coupon_valid) {
+        throw new Error(result.coupon_message || 'Coupon code is invalid.');
+      }
+      setSummary(result);
+      setAppliedCoupon({
+        coupon_code: couponCode,
+        discount_amount: result.coupon_savings
+      });
+      showToast('success', result.coupon_message || 'Coupon applied successfully!');
+    } catch (err) {
+      showToast('error', err.message || 'Failed to apply coupon.');
+      throw err;
+    }
+  }, [showToast]);
 
-  const shipping = useMemo(() => {
-    return calculateShipping(subtotal, items);
-  }, [subtotal, items]);
-
-  const grandTotal = useMemo(() => {
-    return calculateTotal(subtotal, shipping, 0);
-  }, [subtotal, shipping]);
+  const handleRemoveCoupon = useCallback(async () => {
+    setAppliedCoupon(null);
+    try {
+      const summaryData = await getCartSummary();
+      setSummary(summaryData);
+      showToast('info', 'Coupon removed');
+    } catch (err) {
+      console.error('Failed to reset cart summary after coupon removal:', err.message);
+    }
+  }, [showToast]);
 
   // Field validation rules
   const validateField = useCallback((id, value) => {
@@ -247,7 +280,8 @@ export default function Checkout() {
         address: combinedAddress,
         phone: formData.phone.trim(),
         paymentMethod: formData.paymentMethod,
-        notes: formData.notes?.trim() || ''
+        notes: formData.notes?.trim() || '',
+        ...(appliedCoupon ? { coupon_code: appliedCoupon.coupon_code } : {})
       });
 
       // Persist delivery address in localStorage
@@ -367,7 +401,7 @@ export default function Checkout() {
                 />
               </form>
 
-              <CheckoutDeliveryCard shipping={shipping} items={items} subtotal={subtotal} />
+              <CheckoutDeliveryCard shipping={summary.shipping_fee} items={items} subtotal={summary.subtotal} />
 
               <CheckoutPaymentSelector
                 selectedMethod={formData.paymentMethod}
@@ -377,11 +411,18 @@ export default function Checkout() {
 
             {/* Right Column: Order Summary */}
             <div className="checkout-page__summary-wrap">
+              <CouponInput
+                onApply={handleApplyCoupon}
+                onRemove={handleRemoveCoupon}
+                appliedCoupon={appliedCoupon}
+                disabled={submitting}
+              />
               <OrderSummary
                 items={items}
-                subtotal={subtotal}
+                summary={summary}
                 submitting={submitting}
                 isValid={isValid}
+                appliedCoupon={appliedCoupon}
               />
             </div>
           </div>
@@ -392,7 +433,7 @@ export default function Checkout() {
           <div className="checkout-page__mobile-sticky-content container">
             <div className="checkout-page__mobile-sticky-info">
               <span className="checkout-page__mobile-sticky-label">Grand Total</span>
-              <span className="checkout-page__mobile-sticky-val">{formatCurrency(grandTotal)}</span>
+              <span className="checkout-page__mobile-sticky-val">{formatCurrency(summary.final_total)}</span>
             </div>
             <button
               type="submit"

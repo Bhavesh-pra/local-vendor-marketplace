@@ -242,3 +242,128 @@
 .reviews-section__load-btn:active {
   transform: scale(0.98);
 }
+
+/* ── Review Title ─── */
+.reviews-section__item-title {
+  font-size: var(--font-size-base, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-heading, #ffffff);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* ── Media Gallery ─── */
+.reviews-section__media-gallery {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  padding-bottom: 2px;
+}
+
+.reviews-section__media-gallery::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.reviews-section__media-thumb {
+  background: transparent;
+  border: 1px solid var(--color-border-default, #2d3139);
+  padding: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md, 6px);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--duration-fast) var(--easing-out);
+}
+
+.reviews-section__media-thumb:hover {
+  border-color: var(--color-brand-primary, #6366f1);
+}
+
+.reviews-section__media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Lightbox Overlay ─── */
+.reviews-lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal, 1000);
+}
+
+.reviews-lightbox__close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 1010;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  width: 44px;
+}
+
+.reviews-lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1010;
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.reviews-lightbox__nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.reviews-lightbox__nav--prev {
+  left: var(--space-5);
+}
+
+.reviews-lightbox__nav--next {
+  right: var(--space-5);
+}
+
+.reviews-lightbox__content {
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reviews-lightbox__content img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+

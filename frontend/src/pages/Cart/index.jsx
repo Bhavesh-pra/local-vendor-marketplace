@@ -25,7 +25,8 @@ import {
   deleteSavedItem,
   moveSavedItemToCart,
   createCart,
-  addCartItem
+  addCartItem,
+  getCartSummary
 } from '../../services/cartService.js';
 import { getProducts } from '../../services/productService.js';
 import { extractErrorMessage } from '../../utils/extractErrorMessage.js';
@@ -53,6 +54,44 @@ export default function Cart() {
   const [isMoving, setIsMoving] = useState(false);
   const [isDeletingSaved, setIsDeletingSaved] = useState(false);
   const [isAddingRecommended, setIsAddingRecommended] = useState(null);
+
+  // Pricing Summary & Coupon states (Phase 5F)
+  const [summary, setSummary] = useState({
+    original_price: 0,
+    subtotal: 0,
+    discount_amount: 0,
+    coupon_savings: 0,
+    shipping_fee: 0,
+    tax_amount: 0,
+    final_total: 0
+  });
+  const [appliedCouponCode, setAppliedCouponCode] = useState('');
+
+  const fetchCartSummary = useCallback(async (coupon = '') => {
+    if (!isAuthenticated) return;
+    try {
+      const summaryData = await getCartSummary(coupon);
+      setSummary(summaryData);
+    } catch (err) {
+      console.error('Failed to fetch cart summary:', err.message);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      fetchCartSummary(appliedCouponCode);
+    } else {
+      setSummary({
+        original_price: 0,
+        subtotal: 0,
+        discount_amount: 0,
+        coupon_savings: 0,
+        shipping_fee: 0,
+        tax_amount: 0,
+        final_total: 0
+      });
+    }
+  }, [items, appliedCouponCode, fetchCartSummary]);
 
   // Fetch active cart, cart items, and saved items in parallel
   const fetchCartDetails = useCallback(async () => {
@@ -358,7 +397,23 @@ export default function Cart() {
 
                 {/* Right Area (30%): Sticky Order Summary panel */}
                 <div className="cart-page__summary-wrap">
-                  <CartSummary items={items} />
+                  <CartSummary
+                    items={items}
+                    cartId={cartId}
+                    summary={summary}
+                    appliedCouponCode={appliedCouponCode}
+                    onApplyCoupon={async (code) => {
+                      const result = await getCartSummary(code);
+                      if (!result.coupon_valid) {
+                        throw new Error(result.coupon_message || 'Coupon code is invalid.');
+                      }
+                      setSummary(result);
+                      setAppliedCouponCode(code);
+                    }}
+                    onRemoveCoupon={() => {
+                      setAppliedCouponCode('');
+                    }}
+                  />
                 </div>
               </div>
 
@@ -370,7 +425,7 @@ export default function Cart() {
               />
 
               {/* Mobile Sticky Bottom checkout bar */}
-              <StickyCheckoutBar items={items} />
+              <StickyCheckoutBar total={summary.final_total} items={items} />
             </>
           )}
         </div>

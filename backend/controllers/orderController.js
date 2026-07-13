@@ -1,3 +1,6 @@
+const { validateCouponAndCalculateDiscount } = require('../services/couponService');
+const { createNotification } = require('../services/notificationService');
+
 const createOrderController = (database, sendOrderEmail) => ({
   getMyOrders: async (req, res) => {
     try {
@@ -61,7 +64,18 @@ const createOrderController = (database, sendOrderEmail) => ({
          WHERE oi.order_id = ?`,
         [id]
       );
-      res.json({ ...order, items });
+
+      const returnEligibilityService = require('../services/returnEligibility');
+      const enrichedItems = [];
+      for (const item of items) {
+        const eligibility = await returnEligibilityService.getReturnEligibility(database, id, item.variant_id);
+        enrichedItems.push({
+          ...item,
+          return_eligibility: eligibility
+        });
+      }
+
+      res.json({ ...order, items: enrichedItems });
     } catch (err) {
       res.status(500).json({ message: 'Database error: ' + err.message });
     }
@@ -99,6 +113,16 @@ const createOrderController = (database, sendOrderEmail) => ({
           [id]
         );
 
+        // Generate transactional notification
+        await createNotification(database, {
+          user_id: order.user_id,
+          type: 'ORDER_CANCELLED',
+          title: 'Order Cancelled',
+          message: `Your order ${order.order_number} has been cancelled.`,
+          metadata: { order_id: Number(id), order_number: order.order_number },
+          event_key: `ORDER_CANCELLED:${id}`
+        });
+
         // Fetch order items to restock
         const items = await database.all(
           `SELECT variant_id, quantity FROM order_items WHERE order_id = ?`,
@@ -127,7 +151,7 @@ const createOrderController = (database, sendOrderEmail) => ({
   },
 
   placeOrder: async (request, response) => {
-    const { name, email, address, phone, paymentMethod, cart_id } = request.body;
+    const { name, email, address, phone, paymentMethod, cart_id, coupon_code } = request.body;
 
     if (!cart_id) {
       return response.status(400).json({ message: 'cart_id is required.' });
@@ -182,30 +206,20 @@ const createOrderController = (database, sendOrderEmail) => ({
         }
       }
 
-      let subtotal = 0;
-      for (const item of cartItems) {
-        subtotal += item.unit_price * item.quantity;
-      }
-      
-      const hasFreeDeliveryProduct = cartItems.some(
-        item => item.free_shipping === 1
-      );
-
-      let shipping = 0;
-      if (hasFreeDeliveryProduct) {
-        shipping = 0;
-      } else if (subtotal >= 1000) {
-        shipping = 0;
-      } else if (subtotal >= 800) {
-        shipping = 20;
-      } else if (subtotal >= 500) {
-        shipping = 50;
-      } else {
-        shipping = 80;
+      // ─── Pricing & Coupon calculations (Phase 5F) ──────────────────────
+      const { calculateOrderSummary } = require('../services/pricingService');
+      const summaryResult = await calculateOrderSummary(database, request.userId, coupon_code);
+      if (coupon_code && !summaryResult.coupon_valid) {
+        return response.status(400).json({ message: summaryResult.coupon_message });
       }
 
-      const tax = 0; // GST tax is removed completely per transparent pricing policy
-      const total = subtotal + shipping;
+      const subtotal = summaryResult.subtotal;
+      const shipping = summaryResult.shipping_fee;
+      const tax = summaryResult.tax_amount;
+      const discountAmount = summaryResult.coupon_savings;
+      const total = summaryResult.final_total;
+      const appliedCouponId = summaryResult.coupon_id;
+      const couponCodeSnapshot = coupon_code ? coupon_code.toUpperCase() : null;
 
       const now = new Date();
       const dateStr = now.getFullYear().toString() +
@@ -221,8 +235,9 @@ const createOrderController = (database, sendOrderEmail) => ({
           INSERT INTO orders
             (user_id, order_number, status, payment_method, payment_status,
              subtotal_amount, shipping_amount, tax_amount, total_amount,
-             customer_name, customer_email, address_line_1, customer_phone)
-          VALUES (?, ?, 'pending', ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)
+             customer_name, customer_email, address_line_1, customer_phone,
+             coupon_id, discount_amount, coupon_code_snapshot)
+          VALUES (?, ?, 'pending', ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const result = await database.run(createOrderQuery, [
           request.userId,
@@ -235,7 +250,10 @@ const createOrderController = (database, sendOrderEmail) => ({
           name,
           email,
           address,
-          phone || ''
+          phone || '',
+          appliedCouponId,
+          discountAmount,
+          couponCodeSnapshot
         ]);
         const order_id = result.lastID;
 
@@ -245,6 +263,16 @@ const createOrderController = (database, sendOrderEmail) => ({
            VALUES (?, 'placed', 'Order placed successfully.')`,
           [order_id]
         );
+
+        // Generate transactional notification
+        await createNotification(database, {
+          user_id: request.userId,
+          type: 'ORDER_PLACED',
+          title: 'Order Placed',
+          message: `Your order ${orderNumber} has been placed successfully.`,
+          metadata: { order_id, order_number: orderNumber },
+          event_key: `ORDER_PLACED:${order_id}`
+        });
 
         const emailItems = [];
         for (const item of cartItems) {
@@ -309,6 +337,25 @@ const createOrderController = (database, sendOrderEmail) => ({
           });
         }
 
+        // ─── Coupon redemption record (Phase 5D) ──────────────────────
+        if (appliedCouponId) {
+          await database.run(
+            `INSERT INTO coupon_redemptions (coupon_id, order_id, user_id, discount_amount)
+             VALUES (?, ?, ?, ?)`,
+            [appliedCouponId, order_id, request.userId, discountAmount]
+          );
+
+          // Generate transactional notification
+          await createNotification(database, {
+            user_id: request.userId,
+            type: 'COUPON_APPLIED',
+            title: 'Coupon Applied',
+            message: `Coupon ${couponCodeSnapshot} has been applied to your order.`,
+            metadata: { coupon_id: appliedCouponId, coupon_code: couponCodeSnapshot, order_id },
+            event_key: `COUPON_APPLIED:${order_id}`
+          });
+        }
+
         await database.run('DELETE FROM cart_items WHERE cart_id = ?', [activeCart.cart_id]);
         await database.run("UPDATE cart SET status = 'converted', updated_at = datetime('now') WHERE cart_id = ?", [activeCart.cart_id]);
 
@@ -320,7 +367,11 @@ const createOrderController = (database, sendOrderEmail) => ({
           console.error('Email notification failed (order preserved):', emailErr.message);
         }
 
-        response.status(201).json({ message: 'Order placed successfully', order_id, order_number: orderNumber });
+        const orderResponse = { message: 'Order placed successfully', order_id, order_number: orderNumber };
+        if (appliedCouponId) {
+          orderResponse.discount_amount = discountAmount;
+        }
+        response.status(201).json(orderResponse);
       } catch (txErr) {
         await database.run('ROLLBACK');
         throw txErr;
@@ -391,6 +442,24 @@ const createOrderController = (database, sendOrderEmail) => ({
         [id]
       );
       res.json(events);
+    } catch (err) {
+      res.status(500).json({ message: 'Database error: ' + err.message });
+    }
+  },
+
+  getItemEligibility: async (req, res) => {
+    const { id, variant_id } = req.params;
+    try {
+      const order = await database.get('SELECT user_id FROM orders WHERE order_id = ?', [id]);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      if (order.user_id !== req.userId && req.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+      const returnEligibilityService = require('../services/returnEligibility');
+      const eligibility = await returnEligibilityService.getReturnEligibility(database, id, variant_id);
+      res.json(eligibility);
     } catch (err) {
       res.status(500).json({ message: 'Database error: ' + err.message });
     }

@@ -210,6 +210,21 @@
   flex-shrink: 0;
 }
 
+.product-info-panel__highlight-item--policy.text-success .product-info-panel__highlight-icon {
+  color: var(--color-feedback-success, #22C55E);
+}
+
+.product-info-panel__highlight-item--policy.text-danger {
+  color: var(--color-feedback-error, #EF4444);
+}
+
+.product-info-panel__highlight-icon-cross {
+  font-weight: bold;
+  font-size: var(--font-size-sm);
+  color: var(--color-feedback-error, #EF4444);
+  margin-right: 2px;
+}
+
 @media (max-width: 639px) {
   .product-info-panel__buttons-group {
     width: 100%;

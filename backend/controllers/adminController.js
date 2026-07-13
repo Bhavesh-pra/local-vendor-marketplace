@@ -9,6 +9,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { createNotification } = require('../services/notificationService');
 
 const getFullUrl = (req, filePath) => {
   if (!filePath) return '';
@@ -304,7 +305,8 @@ const createAdminController = (database) => ({
       variants,
       specifications,
       warranty,
-      shipping
+      shipping,
+      return_policy_id
     } = req.body;
 
     try {
@@ -356,6 +358,7 @@ const createAdminController = (database) => ({
           size_or_quantity  = COALESCE(?, size_or_quantity),
           product_status    = COALESCE(?, product_status),
           badge             = COALESCE(?, badge),
+          return_policy_id  = COALESCE(?, return_policy_id),
           updated_at        = datetime('now')
         WHERE product_id = ?
       `, [
@@ -372,6 +375,7 @@ const createAdminController = (database) => ({
         sizeSpec,
         product_status || null,
         badge || null,
+        return_policy_id !== undefined ? return_policy_id : null,
         id
       ]);
 
@@ -730,8 +734,8 @@ const createAdminController = (database) => ({
       
       const productResult = await database.run(
         `INSERT INTO products 
-          (supplier_id, category_id, product_name, brand, description, short_description, slug, sku, manufacture_date, cost_price, selling_price, image_url, size_or_quantity, product_status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+          (supplier_id, category_id, product_name, brand, description, short_description, slug, sku, manufacture_date, cost_price, selling_price, image_url, size_or_quantity, product_status, return_policy_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)`,
         [
           prod.supplier_id,
           prod.category_id,
@@ -745,7 +749,8 @@ const createAdminController = (database) => ({
           prod.cost_price,
           prod.selling_price,
           prod.image_url || null,
-          prod.size_or_quantity || null
+          prod.size_or_quantity || null,
+          prod.return_policy_id || null
         ]
       );
       const new_product_id = productResult.lastID;
@@ -953,12 +958,67 @@ const createAdminController = (database) => ({
       return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
     try {
-      const result = await database.run(
-        `UPDATE orders SET status = ?, updated_at = datetime('now') WHERE order_id = ?`,
-        [status, id]
-      );
-      if (result.changes === 0) return res.status(404).json({ message: 'Order not found' });
-      res.json({ message: 'Order status updated' });
+      await database.run('BEGIN TRANSACTION');
+      try {
+        const order = await database.get('SELECT user_id, order_number FROM orders WHERE order_id = ?', [id]);
+        if (!order) {
+          await database.run('ROLLBACK');
+          return res.status(404).json({ message: 'Order not found' });
+        }
+
+        let query = `UPDATE orders SET status = ?, updated_at = datetime('now')`;
+        const params = [status];
+        if (status === 'delivered') {
+          query += `, delivered_at = datetime('now')`;
+        }
+        query += ` WHERE order_id = ?`;
+        params.push(id);
+
+        const result = await database.run(query, params);
+        if (result.changes === 0) {
+          await database.run('ROLLBACK');
+          return res.status(404).json({ message: 'Order not found' });
+        }
+
+        let notifType = null;
+        let notifTitle = null;
+        let notifMessage = null;
+
+        if (status === 'processing') {
+          notifType = 'ORDER_CONFIRMED';
+          notifTitle = 'Order Confirmed';
+          notifMessage = `Your order ${order.order_number} has been confirmed.`;
+        } else if (status === 'shipped') {
+          notifType = 'ORDER_SHIPPED';
+          notifTitle = 'Order Shipped';
+          notifMessage = `Your order ${order.order_number} has been shipped.`;
+        } else if (status === 'delivered') {
+          notifType = 'ORDER_DELIVERED';
+          notifTitle = 'Order Delivered';
+          notifMessage = `Your order ${order.order_number} has been delivered.`;
+        } else if (status === 'cancelled') {
+          notifType = 'ORDER_CANCELLED';
+          notifTitle = 'Order Cancelled';
+          notifMessage = `Your order ${order.order_number} has been cancelled.`;
+        }
+
+        if (notifType) {
+          await createNotification(database, {
+            user_id: order.user_id,
+            type: notifType,
+            title: notifTitle,
+            message: notifMessage,
+            metadata: { order_id: Number(id), order_number: order.order_number },
+            event_key: `${notifType}:${id}`
+          });
+        }
+
+        await database.run('COMMIT');
+        res.json({ message: 'Order status updated' });
+      } catch (txErr) {
+        await database.run('ROLLBACK');
+        throw txErr;
+      }
     } catch (err) {
       res.status(500).json({ message: 'Database error: ' + err.message });
     }
@@ -1021,10 +1081,21 @@ const createAdminController = (database) => ({
 
         if (status === 'approved') {
           if (request.request_type === 'cancel') {
-            await database.run(
-              `UPDATE orders SET status = 'cancelled', updated_at = datetime('now') WHERE order_id = ?`,
-              [request.order_id]
-            );
+             await database.run(
+               `UPDATE orders SET status = 'cancelled', updated_at = datetime('now') WHERE order_id = ?`,
+               [request.order_id]
+             );
+
+             // Generate transactional notification
+             const order = await database.get('SELECT order_number FROM orders WHERE order_id = ?', [request.order_id]);
+             await createNotification(database, {
+               user_id: request.user_id,
+               type: 'ORDER_CANCELLED',
+               title: 'Order Cancelled',
+               message: `Your order ${order.order_number} has been cancelled.`,
+               metadata: { order_id: request.order_id, order_number: order.order_number },
+               event_key: `ORDER_CANCELLED:${request.order_id}`
+             });
 
             // Fetch order items to restock
             const items = await database.all(
@@ -1222,7 +1293,10 @@ const createAdminController = (database) => ({
       const reviews = await database.all(`
         SELECT r.review_id,
                r.rating,
+               r.title,
                r.comment,
+               r.is_verified_purchase,
+               r.status,
                r.created_at,
                p.product_id,
                p.product_name,
@@ -1233,7 +1307,22 @@ const createAdminController = (database) => ({
         JOIN users    u ON r.user_id    = u.user_id
         ORDER BY r.created_at DESC
       `);
-      res.json(reviews);
+
+      const enriched = await Promise.all(
+        reviews.map(async (r) => {
+          const images = await database.all(
+            `SELECT image_id, image_url FROM review_images WHERE review_id = ? ORDER BY created_at ASC`,
+            [r.review_id]
+          );
+          return {
+            ...r,
+            verified_purchase: !!r.is_verified_purchase,
+            images
+          };
+        })
+      );
+
+      res.json(enriched);
     } catch (err) {
       console.error('[admin] getAllReviews:', err.message);
       res.status(500).json({ message: 'Database error: ' + err.message });
@@ -1241,11 +1330,72 @@ const createAdminController = (database) => ({
   },
 
   deleteReview: async (req, res) => {
+    return res.status(403).json({ message: 'Admin review deletion is forbidden. Use moderation visibility toggles.' });
+  },
+
+  updateReviewStatus: async (req, res) => {
     const { id } = req.params;
+    const { status, notes } = req.body;
+    const adminId = req.userId;
+
+    if (!status || !['approved', 'hidden'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid or missing status' });
+    }
+
     try {
-      const result = await database.run('DELETE FROM reviews WHERE review_id = ?', [id]);
-      if (result.changes === 0) return res.status(404).json({ message: 'Review not found' });
-      res.json({ message: 'Review deleted' });
+      const review = await database.get('SELECT * FROM reviews WHERE review_id = ?', [id]);
+      if (!review) {
+        return res.status(404).json({ message: 'Review not found' });
+      }
+
+      await database.run('BEGIN TRANSACTION');
+
+      try {
+        await database.run(
+          `UPDATE reviews SET status = ?, updated_at = datetime('now') WHERE review_id = ?`,
+          [status, id]
+        );
+
+        await database.run(
+          `INSERT INTO review_moderation_logs (review_id, previous_status, new_status, actor_user_id, notes)
+           VALUES (?, ?, ?, ?, ?)`,
+          [id, review.status, status, adminId, notes || `Status updated to ${status}`]
+        );
+
+        const product = await database.get('SELECT product_name FROM products WHERE product_id = ?', [review.product_id]);
+        const productName = product ? product.product_name : 'your product';
+
+        let notifType = null;
+        let notifTitle = null;
+        let notifMessage = null;
+
+        if (status === 'hidden' && review.status !== 'hidden') {
+          notifType = 'REVIEW_HIDDEN';
+          notifTitle = 'Review Hidden';
+          notifMessage = `Your review for ${productName} has been hidden due to moderation guidelines.`;
+        } else if (status === 'approved' && review.status === 'hidden') {
+          notifType = 'REVIEW_RESTORED';
+          notifTitle = 'Review Restored';
+          notifMessage = `Your review for ${productName} has been restored.`;
+        }
+
+        if (notifType) {
+          await createNotification(database, {
+            user_id: review.user_id,
+            type: notifType,
+            title: notifTitle,
+            message: notifMessage,
+            metadata: { review_id: Number(id), product_id: review.product_id },
+            event_key: `${notifType}:${id}`
+          });
+        }
+
+        await database.run('COMMIT');
+        res.json({ message: `Review status updated to ${status} successfully` });
+      } catch (err) {
+        await database.run('ROLLBACK');
+        throw err;
+      }
     } catch (err) {
       res.status(500).json({ message: 'Database error: ' + err.message });
     }

@@ -7,7 +7,10 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "seed:phase4-discovery": "node scripts/seedPhase4DiscoveryDataset.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:phase5",
+    "test:phase5": "node tests/returns.test.js && node tests/returnsWorkflow.test.js && node tests/reviewTrust.test.js && node tests/coupons.test.js && node tests/notifications.test.js && node tests/trust.test.js",
+    "test:coupons": "node tests/coupons.test.js",
+    "test:notifications": "node tests/notifications.test.js"
   },
   "keywords": [],
   "author": "",

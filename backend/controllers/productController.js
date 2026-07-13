@@ -6,6 +6,19 @@ const getFullUrl = (req, filePath) => {
   return `${protocol}://${host}${filePath}`;
 };
 
+const mapReturnPolicy = (type, days) => {
+  if (!type) return null;
+  return {
+    type,
+    days,
+    message: type === 'returnable'
+      ? `${days} Day Returns`
+      : type === 'replacement_only'
+        ? `${days} Day Replacement`
+        : 'Non Returnable'
+  };
+};
+
 let cachedVocabulary = null;
 
 // Rebuild vocabulary cache
@@ -489,6 +502,9 @@ const createProductController = (database) => ({
           p.product_status,
           p.created_at,
           p.updated_at,
+          p.return_policy_id,
+          rp.type as return_policy_type,
+          rp.days as return_policy_days,
           c.category_name,
           c.category_name as category,
           IFNULL(AVG(r.rating), 0) as average_rating,
@@ -534,7 +550,8 @@ const createProductController = (database) => ({
 
       query += `
         LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN reviews r ON p.product_id = r.product_id
+        LEFT JOIN reviews r ON p.product_id = r.product_id AND r.status <> 'hidden'
+        LEFT JOIN return_policies rp ON p.return_policy_id = rp.policy_id
         LEFT JOIN (
           SELECT pv.product_id, SUM(oi.quantity) as quantity_sold
           FROM order_items oi
@@ -721,7 +738,8 @@ const createProductController = (database) => ({
 
       const mapped = products.map(p => ({
         ...p,
-        image_url: getFullUrl(req, p.image_url)
+        image_url: getFullUrl(req, p.image_url),
+        return_policy: mapReturnPolicy(p.return_policy_type, p.return_policy_days)
       }));
 
       // Calculate brand facets (always showing all brands, even if count is 0)
@@ -825,12 +843,14 @@ const createProductController = (database) => ({
               SELECT p.product_id, p.product_name, p.selling_price, p.mrp, p.image_url, p.brand, p.category_id,
                      c.category_name, p.badge, p.product_status, IFNULL(stock_info.total_stock, 0) AS total_stock,
                      IFNULL(r.avg_rating, 0.0) AS average_rating,
+                     p.return_policy_id, rp.type as return_policy_type, rp.days as return_policy_days,
                      (IFNULL(v.views_count, 0) * 1 +
                       IFNULL(rc.click_count, 0) * 2 +
                       IFNULL(atc.cart_count, 0) * 4 +
                       IFNULL(pur.purchase_count, 0) * 8) AS trending_score
               FROM products p
               LEFT JOIN categories c ON p.category_id = c.category_id
+              LEFT JOIN return_policies rp ON p.return_policy_id = rp.policy_id
               LEFT JOIN (
                 SELECT pv.product_id, SUM(i.available_stock) as total_stock
                 FROM product_variants pv
@@ -887,7 +907,8 @@ const createProductController = (database) => ({
               average_rating: tp.average_rating || 0.0,
               badge: tp.badge || null,
               product_status: tp.product_status,
-              total_stock: tp.total_stock
+              total_stock: tp.total_stock,
+              return_policy: mapReturnPolicy(tp.return_policy_type, tp.return_policy_days)
             }));
           } catch (trendErr) {
             console.error('[productController] getProducts trending recovery error:', trendErr);
@@ -1040,12 +1061,16 @@ const createProductController = (database) => ({
            p.product_status,
            p.created_at,
            p.updated_at,
+           p.return_policy_id,
+           rp.type as return_policy_type,
+           rp.days as return_policy_days,
            c.category_name,
            IFNULL(AVG(r.rating), 0) as average_rating,
            COUNT(r.review_id) as reviews_count
          FROM products p
          LEFT JOIN categories c ON p.category_id = c.category_id
-         LEFT JOIN reviews r ON p.product_id = r.product_id
+         LEFT JOIN reviews r ON p.product_id = r.product_id AND r.status <> 'hidden'
+         LEFT JOIN return_policies rp ON p.return_policy_id = rp.policy_id
          WHERE (p.product_id = ? OR p.slug = ?) AND p.product_status <> 'archived'
          GROUP BY p.product_id`,
         [product_id, product_id]
@@ -1065,7 +1090,10 @@ const createProductController = (database) => ({
         }
         const isPrivileged = (role === 'admin' || role === 'supplier');
 
-        const baseProduct = { ...product };
+        const baseProduct = {
+          ...product,
+          return_policy: mapReturnPolicy(product.return_policy_type, product.return_policy_days)
+        };
         if (!isPrivileged) {
           delete baseProduct.cost_price;
         }
@@ -1098,7 +1126,7 @@ const createProductController = (database) => ({
         const similarList = await database.all(
           `SELECT p.product_id, p.product_name, p.brand, p.selling_price, p.mrp, p.image_url, p.product_status, p.badge, IFNULL(AVG(r.rating), 0) as average_rating
            FROM products p
-           LEFT JOIN reviews r ON p.product_id = r.product_id
+           LEFT JOIN reviews r ON p.product_id = r.product_id AND r.status <> 'hidden'
            WHERE p.category_id = ? AND p.product_id <> ? AND p.product_status = 'active'
            GROUP BY p.product_id LIMIT 8`,
           [product.category_id, product.product_id]
@@ -1107,7 +1135,7 @@ const createProductController = (database) => ({
         const brandList = product.brand ? await database.all(
           `SELECT p.product_id, p.product_name, p.brand, p.selling_price, p.mrp, p.image_url, p.product_status, p.badge, IFNULL(AVG(r.rating), 0) as average_rating
            FROM products p
-           LEFT JOIN reviews r ON p.product_id = r.product_id
+           LEFT JOIN reviews r ON p.product_id = r.product_id AND r.status <> 'hidden'
            WHERE lower(p.brand) = lower(?) AND p.product_id <> ? AND p.product_status = 'active'
            GROUP BY p.product_id LIMIT 8`,
           [product.brand, product.product_id]
@@ -1116,7 +1144,7 @@ const createProductController = (database) => ({
         const freqBoughtList = await database.all(
           `SELECT p.product_id, p.product_name, p.brand, p.selling_price, p.mrp, p.image_url, p.product_status, p.badge, IFNULL(AVG(r.rating), 0) as average_rating
            FROM products p
-           LEFT JOIN reviews r ON p.product_id = r.product_id
+           LEFT JOIN reviews r ON p.product_id = r.product_id AND r.status <> 'hidden'
            WHERE p.category_id = ? AND p.product_id <> ? AND p.product_status = 'active'
            GROUP BY p.product_id ORDER BY p.product_id DESC LIMIT 4`,
           [product.category_id, product.product_id]
@@ -1169,10 +1197,35 @@ const createProductController = (database) => ({
           legacy.cost_price = defaultVar ? (defaultVar.cost_override ?? product.cost_price) : product.cost_price;
         }
 
+        const purchaseStats = await database.get(
+          `SELECT IFNULL(SUM(oi.quantity), 0) AS count
+           FROM order_items oi
+           JOIN orders o ON oi.order_id = o.order_id
+           WHERE oi.variant_id IN (SELECT variant_id FROM product_variants WHERE product_id = ?)
+             AND o.status = 'delivered'`,
+          [product.product_id]
+        );
+        const purchasesCount = purchaseStats?.count || 0;
+
+        const verifiedStats = await database.get(
+          `SELECT COUNT(*) AS count
+           FROM reviews
+           WHERE product_id = ? AND status <> 'hidden' AND is_verified_purchase = 1`,
+          [product.product_id]
+        );
+        const verifiedReviewsCount = verifiedStats?.count || 0;
+
+        const trustMetrics = {
+          purchases_count: purchasesCount,
+          rating_average: Number(product.average_rating || 0),
+          verified_reviews_count: verifiedReviewsCount
+        };
+
         res.json({
           ...baseProduct,
           image_url: getFullUrl(req, product.image_url),
           variants: mappedVariants,
+          trust_metrics: trustMetrics,
           media: {
             cover: getFullUrl(req, primaryImage),
             coverAlt: media.find(m => m.is_primary === 1 && m.media_type === 'image')?.alt_text || '',
@@ -1231,21 +1284,37 @@ const createProductController = (database) => ({
       };
 
       // Map products to include legacy fields and full URLs
-      const mapProductDetails = (rows) => {
-        return rows.map(p => ({
-          product_id: p.product_id,
-          product_name: p.product_name,
-          selling_price: p.selling_price,
-          mrp: p.mrp,
-          image_url: getFullUrl(req, p.image_url),
-          brand: p.brand,
-          category_id: p.category_id,
-          category_name: p.category_name,
-          average_rating: p.average_rating || 0.0,
-          badge: p.badge || null,
-          product_status: p.product_status,
-          total_stock: p.total_stock
-        }));
+      const mapProductDetails = async (rows) => {
+        if (!rows || rows.length === 0) return [];
+        const productIds = rows.map(r => r.product_id);
+        const placeholders = productIds.map(() => '?').join(',');
+        const policies = await database.all(
+          `SELECT p.product_id, rp.type as return_policy_type, rp.days as return_policy_days
+           FROM products p
+           LEFT JOIN return_policies rp ON p.return_policy_id = rp.policy_id
+           WHERE p.product_id IN (${placeholders})`,
+          productIds
+        );
+        const policyMap = new Map(policies.map(item => [item.product_id, item]));
+
+        return rows.map(p => {
+          const pol = policyMap.get(p.product_id);
+          return {
+            product_id: p.product_id,
+            product_name: p.product_name,
+            selling_price: p.selling_price,
+            mrp: p.mrp,
+            image_url: getFullUrl(req, p.image_url),
+            brand: p.brand,
+            category_id: p.category_id,
+            category_name: p.category_name,
+            average_rating: p.average_rating || 0.0,
+            badge: p.badge || null,
+            product_status: p.product_status,
+            total_stock: p.total_stock,
+            return_policy: mapReturnPolicy(pol?.return_policy_type, pol?.return_policy_days)
+          };
+        });
       };
 
       // ─── 1. Frequently Bought Together (FBT) ───
@@ -1407,11 +1476,18 @@ const createProductController = (database) => ({
         LIMIT 20
       `, [targetId]);
 
+      const [fbt, cav, similar, trending] = await Promise.all([
+        mapProductDetails(fbtRows),
+        mapProductDetails(cavRows),
+        mapProductDetails(similarRows),
+        mapProductDetails(trendingRows)
+      ]);
+
       res.json({
-        frequently_bought_together: mapProductDetails(fbtRows),
-        customers_also_viewed: mapProductDetails(cavRows),
-        similar_products: mapProductDetails(similarRows),
-        trending_products: mapProductDetails(trendingRows)
+        frequently_bought_together: fbt,
+        customers_also_viewed: cav,
+        similar_products: similar,
+        trending_products: trending
       });
     } catch (err) {
       console.error('[productController] getRecommendations error:', err.message);

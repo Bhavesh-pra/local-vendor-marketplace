@@ -41,3 +41,23 @@ export async function getOrderEvents(orderId) {
   const response = await axiosInstance.get(`/orders/${orderId}/events`);
   return response.data;
 }
+
+/**
+ * Submit a return/replacement request for an item in an order
+ * @param {number|string} orderId
+ * @param {number|string} variantId
+ * @param {object} payload
+ */
+export async function submitReturnRequest(orderId, variantId, payload) {
+  const response = await axiosInstance.post(`/orders/${orderId}/items/${variantId}/returns`, payload);
+  return response.data;
+}
+
+/**
+ * Fetch detailed state and events of a return request
+ * @param {number|string} returnId
+ */
+export async function getReturnDetails(returnId) {
+  const response = await axiosInstance.get(`/returns/${returnId}`);
+  return response.data;
+}

@@ -1,33 +1,45 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, RotateCcw, Lock, Tag, Truck } from 'lucide-react';
-import { calculateShipping, calculateTax, calculateTotal } from '../../../../utils/pricing.js';
 import { formatCurrency } from '../../../../utils/formatters.js';
 import { ROUTES } from '../../../../constants/routes.js';
 import { useToast } from '../../../../hooks/useToast.js';
 import './index.css';
 
-export function CartSummary({ items }) {
+export function CartSummary({
+  items,
+  summary,
+  appliedCouponCode,
+  onApplyCoupon,
+  onRemoveCoupon
+}) {
   const { showToast } = useToast();
   const [promoCode, setPromoCode] = useState('');
-  const [isApplied, setIsApplied] = useState(false);
 
-  // Math calculations based on existing business logic
-  const sellingSubtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+  const sellingSubtotal = summary.subtotal;
   const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
-  const shipping = calculateShipping(sellingSubtotal, items);
-  const tax = calculateTax(sellingSubtotal);
-  const total = calculateTotal(sellingSubtotal, shipping, tax);
+  const shipping = summary.shipping_fee;
+  const tax = summary.tax_amount;
+  const discountAmount = summary.coupon_savings;
+  const total = summary.final_total;
+  const isApplied = !!appliedCouponCode;
 
-  const handleApplyPromo = (e) => {
+  const handleApplyPromo = async (e) => {
     e.preventDefault();
     if (!promoCode.trim()) {
       showToast('error', 'Please enter a promo code.');
       return;
     }
-    // Static UI-only demo response
-    setIsApplied(true);
-    showToast('success', `Promo code "${promoCode.trim().toUpperCase()}" applied successfully!`);
+    try {
+      await onApplyCoupon(promoCode.trim());
+    } catch (err) {
+      showToast('error', err.message || 'Failed to apply promo code.');
+    }
+  };
+
+  const handleRemovePromo = () => {
+    onRemoveCoupon();
+    setPromoCode('');
   };
 
   return (
@@ -49,7 +61,7 @@ export function CartSummary({ items }) {
             <div className="cart-shipping-badge cart-shipping-badge--paid">
               <Truck size={16} className="cart-shipping-badge__icon" />
               <span className="cart-shipping-badge__text">
-                Add <strong>{formatCurrency(500 - sellingSubtotal > 0 ? 500 - sellingSubtotal : 1000 - sellingSubtotal)}</strong> more to get free shipping
+                Add <strong>{formatCurrency(1000 - sellingSubtotal)}</strong> more to get free shipping
               </span>
             </div>
           )}
@@ -62,28 +74,55 @@ export function CartSummary({ items }) {
             <input
               type="text"
               placeholder="Enter promo code"
-              value={promoCode}
+              value={isApplied ? appliedCouponCode : promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
               className="cart-promo-input-group__field"
               disabled={isApplied}
             />
-            <button
-              type="submit"
-              className="cart-promo-input-group__btn"
-              disabled={isApplied}
-            >
-              {isApplied ? 'Applied' : 'Apply'}
-            </button>
+            {isApplied ? (
+              <button
+                type="button"
+                className="cart-promo-input-group__btn cart-promo-input-group__btn--remove"
+                onClick={handleRemovePromo}
+              >
+                Remove
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="cart-promo-input-group__btn"
+              >
+                Apply
+              </button>
+            )}
           </div>
         </form>
 
         {/* Calculation Rows */}
         <div className="cart-summary-card__rows">
+          {/* MRP Subtotal */}
+          <div className="cart-summary-card__row">
+            <span className="cart-summary-card__label">Original Price (MRP)</span>
+            <span className="cart-summary-card__value">{formatCurrency(summary.original_price)}</span>
+          </div>
+
+          {/* Product markdown discount */}
+          {summary.discount_amount > 0 && (
+            <div className="cart-summary-card__row cart-summary-card__row--savings">
+              <span className="cart-summary-card__label">Product Discount</span>
+              <span className="cart-summary-card__value cart-summary-card__value--savings">
+                -{formatCurrency(summary.discount_amount)}
+              </span>
+            </div>
+          )}
+
+          {/* Selling Price Subtotal */}
           <div className="cart-summary-card__row">
             <span className="cart-summary-card__label">Subtotal</span>
             <span className="cart-summary-card__value">{formatCurrency(sellingSubtotal)}</span>
           </div>
 
+          {/* Shipping */}
           <div className="cart-summary-card__row">
             <span className="cart-summary-card__label">Shipping</span>
             <span className="cart-summary-card__value">
@@ -95,6 +134,17 @@ export function CartSummary({ items }) {
             </span>
           </div>
 
+          {/* Coupon Discount */}
+          {discountAmount > 0 && (
+            <div className="cart-summary-card__row cart-summary-card__row--coupon">
+              <span className="cart-summary-card__label">Coupon Savings</span>
+              <span className="cart-summary-card__value cart-summary-card__value--savings">
+                -{formatCurrency(discountAmount)}
+              </span>
+            </div>
+          )}
+
+          {/* Estimated tax */}
           <div className="cart-summary-card__row">
             <span className="cart-summary-card__label">Estimated tax</span>
             <span className="cart-summary-card__value">{formatCurrency(tax)}</span>
@@ -130,8 +180,8 @@ export function CartSummary({ items }) {
             <RotateCcw size={18} className="cart-feature-card__icon" />
           </div>
           <div className="cart-feature-card__info">
-            <span className="cart-feature-card__title">Free returns</span>
-            <span className="cart-feature-card__desc">Within 30 days</span>
+            <span className="cart-feature-card__title">Easy returns</span>
+            <span className="cart-feature-card__desc">No questions asked</span>
           </div>
         </div>
 

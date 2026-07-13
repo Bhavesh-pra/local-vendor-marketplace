@@ -25,4 +25,24 @@ const authenticateHeader = async (request, response, next) => {
   }
 };
 
-module.exports = { authenticateHeader };
+const optionalAuthenticateHeader = async (request, response, next) => {
+  const authHeader = request.headers['authorization'];
+  if (authHeader === undefined) {
+    return next();
+  }
+  const jwtToken = authHeader.split(' ')[1];
+  if (!jwtToken) {
+    return next();
+  }
+  jwt.verify(jwtToken, process.env.JWT_SECRET || 'HELLO_WORLD', async (error, payload) => {
+    if (!error && payload) {
+      request.userId = payload.userId;
+      request.username = payload.username;
+      request.role = payload.role;
+      request.name = payload.username;
+    }
+    next();
+  });
+};
+
+module.exports = { authenticateHeader, optionalAuthenticateHeader };

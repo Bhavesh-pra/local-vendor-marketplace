@@ -10,6 +10,7 @@ export const ROUTES = {
   ORDER_DETAILS:   '/orders/:id',
   PROFILE:         '/profile',
   ORDER_SUCCESS:   '/order-success/:orderId',
+  NOTIFICATIONS:   '/notifications',
   ADD_PRODUCT:     '/add-product',
   NOT_FOUND:       '*',
 
@@ -23,9 +24,11 @@ export const ROUTES = {
   ADMIN_ORDERS:          '/admin/orders',
   ADMIN_ORDER_DETAIL:    '/admin/orders/:id',
   ADMIN_REQUESTS:        '/admin/requests',
+  ADMIN_RETURNS:         '/admin/returns',
   ADMIN_CUSTOMERS:       '/admin/customers',
   ADMIN_CUSTOMER_DETAIL: '/admin/customers/:id',
   ADMIN_REVIEWS:         '/admin/reviews',
+  ADMIN_COUPONS:         '/admin/coupons',
   ADMIN_SETTINGS:        '/admin/settings',
 };
 

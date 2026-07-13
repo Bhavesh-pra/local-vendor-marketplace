@@ -24,6 +24,7 @@ const LazyOrders         = lazy(() => import('./pages/Orders/index.jsx'));
 const LazyOrderDetail    = lazy(() => import('./pages/OrderDetails/index.jsx'));
 const LazyProfile        = lazy(() => import('./pages/Profile/index.jsx'));
 const LazyOrderSuccess   = lazy(() => import('./pages/OrderSuccess/index.jsx'));
+const LazyNotifications  = lazy(() => import('./pages/Notifications/index.jsx'));
 const LazyNotFound       = lazy(() => import('./pages/NotFound/index.jsx'));
 
 // Admin pages
@@ -35,10 +36,12 @@ const LazyAdminEditProduct = lazy(() => import('./pages/Admin/Products/EditProdu
 const LazyAdminOrders      = lazy(() => import('./pages/Admin/Orders/index.jsx'));
 const LazyAdminOrderDetail = lazy(() => import('./pages/Admin/Orders/OrderDetail/index.jsx'));
 const LazyAdminRequests    = lazy(() => import('./pages/Admin/Requests/index.jsx'));
+const LazyAdminReturns     = lazy(() => import('./pages/Admin/Returns/index.jsx'));
 const LazyAdminAnalytics   = lazy(() => import('./pages/Admin/Analytics/index.jsx'));
 const LazyAdminCustomers   = lazy(() => import('./pages/Admin/Customers/index.jsx'));
 const LazyAdminCustomerDetail = lazy(() => import('./pages/Admin/Customers/CustomerDetail/index.jsx'));
 const LazyAdminReviews     = lazy(() => import('./pages/Admin/Reviews/index.jsx'));
+const LazyAdminCoupons     = lazy(() => import('./pages/Admin/Coupons/index.jsx'));
 const LazyAdminInventory   = lazy(() => import('./pages/Admin/Inventory/index.jsx'));
 const LazyAdminSettings    = lazy(() => import('./pages/Admin/Settings/index.jsx'));
 
@@ -89,6 +92,7 @@ function AppRoutes() {
         <Route path={ROUTES.ORDER_DETAILS} element={<LazyRoute element={LazyOrderDetail} />} />
         <Route path={ROUTES.PROFILE}  element={<LazyRoute element={LazyProfile} />} />
         <Route path={ROUTES.ORDER_SUCCESS} element={<LazyRoute element={LazyOrderSuccess} />} />
+        <Route path={ROUTES.NOTIFICATIONS} element={<LazyRoute element={LazyNotifications} />} />
       </Route>
 
       {/* Shared Admin & Supplier dashboard routes */}
@@ -109,9 +113,11 @@ function AppRoutes() {
           <Route path={ROUTES.ADMIN_ORDERS}          element={<LazyRoute element={LazyAdminOrders} />} />
           <Route path={ROUTES.ADMIN_ORDER_DETAIL}    element={<LazyRoute element={LazyAdminOrderDetail} />} />
           <Route path={ROUTES.ADMIN_REQUESTS}        element={<LazyRoute element={LazyAdminRequests} />} />
+          <Route path={ROUTES.ADMIN_RETURNS}         element={<LazyRoute element={LazyAdminReturns} />} />
           <Route path={ROUTES.ADMIN_CUSTOMERS}       element={<LazyRoute element={LazyAdminCustomers} />} />
           <Route path={ROUTES.ADMIN_CUSTOMER_DETAIL} element={<LazyRoute element={LazyAdminCustomerDetail} />} />
           <Route path={ROUTES.ADMIN_REVIEWS}         element={<LazyRoute element={LazyAdminReviews} />} />
+          <Route path={ROUTES.ADMIN_COUPONS}         element={<LazyRoute element={LazyAdminCoupons} />} />
           <Route path={ROUTES.ADMIN_SETTINGS}        element={<LazyRoute element={LazyAdminSettings} />} />
         </Route>
       </Route>

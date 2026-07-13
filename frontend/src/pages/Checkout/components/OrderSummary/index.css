@@ -160,6 +160,14 @@
   color: var(--color-status-success, #10b981);
 }
 
+.order-summary__row--coupon {
+  color: var(--color-status-success, #10b981);
+  background: rgba(16, 185, 129, 0.04);
+  margin: 0 calc(-1 * var(--space-4, 16px));
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  border-radius: var(--radius-sm, 4px);
+}
+
 .order-summary__label {
   font-size: var(--font-size-sm);
   color: var(--color-text-body);

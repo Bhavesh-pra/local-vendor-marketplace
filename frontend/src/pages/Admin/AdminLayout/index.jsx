@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Settings,
+  RefreshCw,
+  Tag,
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth.js';
 import { useToast } from '../../../hooks/useToast.js';
@@ -24,7 +26,9 @@ const NAV_ITEMS = [
   { label: 'Products',  icon: Package,          path: ROUTES.ADMIN_PRODUCTS              },
   { label: 'Inventory', icon: ClipboardList,    path: ROUTES.ADMIN_INVENTORY             },
   { label: 'Orders',    icon: ShoppingBag,       path: ROUTES.ADMIN_ORDERS               },
+  { label: 'Returns',   icon: RefreshCw,         path: ROUTES.ADMIN_RETURNS              },
   { label: 'Customers', icon: Users,             path: ROUTES.ADMIN_CUSTOMERS            },
+  { label: 'Coupons',   icon: Tag,               path: ROUTES.ADMIN_COUPONS              },
   { label: 'Settings',  icon: Settings,          path: ROUTES.ADMIN_SETTINGS             },
 ];
 
