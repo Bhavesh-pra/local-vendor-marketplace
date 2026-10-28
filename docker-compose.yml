@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=HELLO_WORLD_SECRET_DOCKER_KEY
+      - DATABASE_PATH=ecommerce.sqlite
+      - FRONTEND_URL=http://localhost:5173
+    volumes:
+      - backend_data:/app/backups
+      - backend_uploads:/app/uploads
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  backend_data:
+  backend_uploads:

@@ -297,28 +297,24 @@ const createReviewController = (database) => ({
       return res.status(400).json({ message: 'fileName and fileData are required' });
     }
 
-    const ext = path.extname(fileName).toLowerCase();
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-
-    if (!allowedExtensions.includes(ext)) {
-      return res.status(400).json({ message: 'Only image files are allowed. Video uploads are forbidden.' });
-    }
-
     try {
-      const base64Data = fileData.includes(';base64,') ? fileData.split(';base64,')[1] : fileData;
-      const buffer = Buffer.from(base64Data, 'base64');
-      
-      const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
+      const { validateUploadedFile } = require('../middleware/security');
+      let validated;
+      try {
+        validated = validateUploadedFile(fileName, fileData, ['image']);
+      } catch (validationErr) {
+        return res.status(400).json({ message: validationErr.message });
+      }
+
       const uploadDir = path.join(__dirname, '../uploads/reviews');
-      
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
       
-      const filePath = path.join(uploadDir, uniqueName);
-      fs.writeFileSync(filePath, buffer);
+      const filePath = path.join(uploadDir, validated.uniqueName);
+      fs.writeFileSync(filePath, validated.buffer);
       
-      const relativePath = `/uploads/reviews/${uniqueName}`;
+      const relativePath = `/uploads/reviews/${validated.uniqueName}`;
       res.json({ fileUrl: relativePath });
     } catch (err) {
       console.error('[review] uploadReviewMedia:', err.message);

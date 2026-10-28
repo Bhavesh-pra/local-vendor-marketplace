@@ -8,6 +8,7 @@ const createAnalyticsController = (database) => {
         // Valid business events only
         const ALLOWED_EVENTS = [
           'product_view',
+          'product_click',
           'search_used',
           'search_suggestion_click',
           'filter_applied',
@@ -16,8 +17,12 @@ const createAnalyticsController = (database) => {
           'recommendation_click',
           'wishlist_add',
           'add_to_cart',
+          'cart_updated',
+          'checkout_started',
+          'checkout_completed',
           'purchase_complete',
-          'no_results_viewed'
+          'no_results_viewed',
+          'payment_failed'
         ];
 
         // 1. Unknown events are ignored safely (return 200 to ignore silently)
@@ -28,6 +33,21 @@ const createAnalyticsController = (database) => {
         // 2. Validate payload session ID presence
         if (!session_id) {
           return res.status(400).json({ message: 'Missing session_id' });
+        }
+
+        // 3. Bot Protection: Deduplicate product views within 30 minutes
+        if (event_name === 'product_view' && product_id) {
+          const recentView = await database.get(`
+            SELECT id FROM analytics_events
+            WHERE event_name = 'product_view'
+              AND session_id = ?
+              AND product_id = ?
+              AND created_at >= datetime('now', '-30 minutes')
+            LIMIT 1
+          `, [session_id, product_id]);
+          if (recentView) {
+            return res.status(202).json({ message: 'Event ignored (deduplicated)' });
+          }
         }
 
         // 3. Write asynchronously - trigger write in background, do not await!

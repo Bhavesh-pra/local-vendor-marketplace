@@ -342,6 +342,41 @@ export default function ProductDetails() {
               onSelectSize={setSelectedSize}
             />
 
+            {/* Privileged Stock & Last Movement Date Display */}
+            {isAuthenticated && (role === 'admin' || role === 'supplier') && activeVariant && (
+              <div className="product-details__admin-stock-box" style={{
+                background: 'var(--color-bg-hover)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px',
+                margin: '16px 0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>CURRENT STOCK:</span>
+                  <span style={{ 
+                    fontWeight: '700', 
+                    fontSize: '15px',
+                    color: activeVariant.available_stock === 0 ? 'var(--color-danger)' : activeVariant.available_stock <= activeVariant.reorder_level ? 'var(--color-warning)' : 'var(--color-success)'
+                  }}>
+                    {activeVariant.available_stock} Units
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>LAST MOVEMENT DATE:</span>
+                  <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text)' }}>
+                    {activeVariant.last_movement_date 
+                      ? new Date(activeVariant.last_movement_date).toLocaleString('en-IN') 
+                      : (activeVariant.last_restock_date 
+                          ? new Date(activeVariant.last_restock_date).toLocaleString('en-IN') 
+                          : 'None Recorded')}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Sticky/Conversion Buy Box */}
             <BuyBox
               product={product}

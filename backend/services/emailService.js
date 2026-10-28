@@ -1,47 +1,80 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
+const getOrderRecipients = () => (
+  process.env.ORDER_NOTIFICATION_EMAIL ||
+  process.env.MAIL_RECEIVER ||
+  process.env.ADMIN_EMAIL ||
+  ''
+)
+  .split(',')
+  .map((recipient) => recipient.trim())
+  .filter(Boolean);
 
-const sendOrderEmail = async (orderNumber, name, email, address, paymentMethod, items, total) => {
+const createTransporter = () => {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+};
+
+const formatCurrency = (amount) => `Rs. ${Number(amount || 0).toFixed(2)}`;
+
+const sendOrderEmail = async (orderNumber, name, email, address, paymentMethod, items, total, phone = '') => {
+  const recipients = getOrderRecipients();
+  if (recipients.length === 0) {
+    console.warn(`[EmailService] Order email skipped for ${orderNumber}: ORDER_NOTIFICATION_EMAIL/MAIL_RECEIVER is not configured.`);
+    return { skipped: true, reason: 'recipient_not_configured' };
+  }
+
+  const transporter = createTransporter();
+  if (!transporter) {
+    console.warn(`[EmailService] Order email skipped for ${orderNumber}: GMAIL_USER/GMAIL_PASS is not configured.`);
+    return { skipped: true, reason: 'smtp_not_configured' };
+  }
+
   const itemsText = items
-    .map(item => `${item.product_name || `Product #${item.product_id}`} — Qty: ${item.quantity} — ₹${item.unit_price}`)
+    .map((item) => {
+      const productName = item.product_name || `Product #${item.product_id}`;
+      return `${productName} - Qty: ${item.quantity} - ${formatCurrency(item.unit_price)}`;
+    })
     .join('\n');
 
   const mailText = `
-Order Details:
+New order received
+
 Order Number: ${orderNumber}
+Payment Method: ${paymentMethod}
+Total Amount: ${formatCurrency(total)}
+
+Customer:
 Name: ${name}
 Email: ${email}
+Phone: ${phone || 'Not provided'}
 Address: ${address}
-Payment Method: ${paymentMethod}
 
 Purchased Items:
 ${itemsText}
-
-Total Amount: ₹${total.toFixed(2)}
-  `;
+  `.trim();
 
   const mailOptions = {
     from: process.env.GMAIL_USER,
-    to: process.env.MAIL_RECEIVER || email,
+    to: recipients,
+    replyTo: email,
     subject: `New Order Placed - ${orderNumber}`,
     text: mailText,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Order email sent successfully:', info.response);
-  } catch (err) {
-    console.error('Error sending order email:', err.message);
-    throw err; // Re-throw so caller can handle
-  }
+  const info = await transporter.sendMail(mailOptions);
+  console.log('Order email sent successfully:', info.response);
+  return info;
 };
 
 module.exports = { sendOrderEmail };

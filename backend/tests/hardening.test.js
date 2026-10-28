@@ -1,135 +1,165 @@
-const fs = require('fs');
-const path = require('path');
+const { createSessionService } = require('../services/sessionService');
+const { validateSchema } = require('../middleware/validate');
 const { open } = require('sqlite');
 const sqlite3 = require('sqlite3');
-const { createReviewController } = require('../controllers/reviewController');
-const { createProductController } = require('../controllers/productController');
-const { createAnalyticsController } = require('../controllers/analyticsController');
+const path = require('path');
+const fs = require('fs');
 
 async function runTests() {
-  console.log('Starting Phase 4 Hardening Refinements Verification Tests...');
+  console.log('Starting Hardening, Sessions, and Validation Tests...');
+  const failures = [];
+  const expect = (condition, message) => {
+    if (condition) {
+      console.log(`SUCCESS: ${message}`);
+    } else {
+      failures.push(message);
+      console.error(`FAIL: ${message}`);
+    }
+  };
 
-  const mainDbPath = path.join(__dirname, '../ecommerce.sqlite');
   const testDbPath = path.join(__dirname, 'test_hardening.sqlite');
-
-  fs.copyFileSync(mainDbPath, testDbPath);
-  console.log('Copied database to test file.');
+  if (fs.existsSync(testDbPath)) {
+    fs.unlinkSync(testDbPath);
+  }
 
   const db = await open({
     filename: testDbPath,
     driver: sqlite3.Database,
   });
 
-  const reviewCtrl = createReviewController(db);
-  const prodCtrl = createProductController(db);
-  const analyticsCtrl = createAnalyticsController(db);
+  try {
+    // 1. Setup minimal tables
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        email TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL,
+        status TEXT NOT NULL
+      )
+    `);
 
-  const mockRes = {
-    status: function(code) {
-      this.statusCode = code;
-      return this;
-    },
-    json: function(data) {
-      this.data = data;
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        ip_address TEXT,
+        user_agent TEXT,
+        expires_at TEXT NOT NULL,
+        last_used_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        revoked_at TEXT
+      )
+    `);
+
+    // Insert active test user
+    await db.run(`
+      INSERT INTO users (user_id, username, email, password_hash, role, status)
+      VALUES (1, 'UserA', 'usera@test.com', 'hash', 'customer', 'active')
+    `);
+
+    process.env.JWT_SECRET = 'TEST_JWT_SECRET_STRING';
+
+    const sessionService = createSessionService(db);
+
+    // Test 1: Refresh Token Generation
+    const rawToken = await sessionService.generateRefreshToken(1, '127.0.0.1', 'Mozilla');
+    expect(rawToken.length === 80, 'Should generate an 80-char hex refresh token');
+
+    const dbRecord = await db.get('SELECT * FROM refresh_tokens WHERE user_id = 1');
+    expect(dbRecord !== undefined, 'Refresh token should be written to database');
+    expect(dbRecord.token_hash !== rawToken, 'Token should be hashed before saving (token_hash !== rawToken)');
+    expect(dbRecord.ip_address === '127.0.0.1', 'Token should store IP address');
+    expect(dbRecord.user_agent === 'Mozilla', 'Token should store user agent');
+
+    // Test 2: Token rotation
+    const rotated = await sessionService.verifyAndRotateSession(rawToken, '127.0.0.2', 'Chrome');
+    expect(rotated.accessToken !== undefined, 'Rotation should return a new access token');
+    expect(rotated.refreshToken !== undefined, 'Rotation should return a new rotated refresh token');
+    expect(rotated.refreshToken !== rawToken, 'Rotated refresh token must be a new token');
+
+    const rotatedDbRecord = await db.get('SELECT * FROM refresh_tokens WHERE token_hash = ?', [dbRecord.token_hash]);
+    expect(rotatedDbRecord.revoked_at !== null, 'Old refresh token should be marked as revoked');
+
+    // Test 3: Token Reuse Detection (Replay Attacks Protection)
+    try {
+      await sessionService.verifyAndRotateSession(rawToken, '127.0.0.3', 'Safari');
+      expect(false, 'Reusing a revoked refresh token should throw an error');
+    } catch (err) {
+      expect(err.message.includes('Token reuse detected'), 'Should detect token reuse and raise alarm');
     }
-  };
 
-  // Mock users & reviews
-  await db.run('DELETE FROM reviews WHERE product_id = 9999');
-  await db.run('DELETE FROM users WHERE user_id IN (9999, 9998, 9997, 9996)');
+    // Verify all sessions revoked for user 1 after reuse attempt
+    const activeSessionsCount = await db.get('SELECT COUNT(*) as active FROM refresh_tokens WHERE user_id = 1 AND revoked_at IS NULL');
+    expect(activeSessionsCount.active === 0, 'All sessions for the user should be revoked upon reuse detection');
 
-  await db.run(`INSERT INTO users (user_id, username, email, password_hash) VALUES (9999, 'test_user_99', 'test99@refine.com', 'hash')`);
-  await db.run(`INSERT INTO users (user_id, username, email, password_hash) VALUES (9998, 'test_user_98', 'test98@refine.com', 'hash')`);
-  await db.run(`INSERT INTO users (user_id, username, email, password_hash) VALUES (9997, 'test_user_97', 'test97@refine.com', 'hash')`);
-  await db.run(`INSERT INTO users (user_id, username, email, password_hash) VALUES (9996, 'test_user_96', 'test96@refine.com', 'hash')`);
+    // Test 4: Validation Middleware
+    const schema = {
+      body: {
+        email: { type: 'email', required: true },
+        age: { type: 'number', min: 18, required: false }
+      }
+    };
+    const validator = validateSchema(schema);
 
-  await db.run(`
-    INSERT INTO reviews (review_id, product_id, user_id, rating, comment, created_at)
-    VALUES 
-      (9991, 9999, 9999, 5, 'Great review 1', '2026-07-01 10:00:00'),
-      (9992, 9999, 9998, 4, 'Great review 2', '2026-07-02 10:00:00'),
-      (9993, 9999, 9997, 3, 'Great review 3', '2026-07-03 10:00:00'),
-      (9994, 9999, 9996, 2, 'Great review 4', '2026-07-04 10:00:00')
-  `);
+    let nextCalled = false;
+    let responseStatus = null;
+    let responseJson = null;
 
-  // ─── Test 1: Reviews Pagination ───
-  console.log('\nTesting Reviews Pagination Contract...');
-  await reviewCtrl.getReviews({
-    params: { product_id: 9999 },
-    query: { page: 2, limit: 2 }
-  }, mockRes);
+    const mockRes = {
+      status: (code) => {
+        responseStatus = code;
+        return {
+          json: (data) => { responseJson = data; }
+        };
+      }
+    };
 
-  const resp = mockRes.data;
-  if (resp && Array.isArray(resp.reviews) && resp.total_count === 4 && resp.reviews.length === 2 && resp.has_next === false) {
-    console.log('SUCCESS: Reviews pagination contract returned unified structure correctly.');
-  } else {
-    console.error('FAIL: Reviews pagination response invalid:', resp);
+    // Valid inputs
+    const mockReqValid = {
+      body: { email: 'test@domain.com', age: 25 },
+      params: {},
+      query: {}
+    };
+    validator(mockReqValid, mockRes, () => { nextCalled = true; });
+    expect(nextCalled, 'Validation should call next() for valid inputs');
+
+    // Invalid inputs
+    nextCalled = false;
+    const mockReqInvalid = {
+      body: { email: 'bademail', age: 15 },
+      params: {},
+      query: {}
+    };
+    validator(mockReqInvalid, mockRes, () => { nextCalled = true; });
+    expect(!nextCalled, 'Validation should block execution for invalid inputs');
+    expect(responseStatus === 400, 'Invalid validation should return 400 Bad Request');
+    expect(responseJson.success === false, 'Validation failure should report success = false');
+    expect(responseJson.errors.email !== undefined, 'Should flag invalid email');
+    expect(responseJson.errors.age !== undefined, 'Should flag age range violation');
+
+    await db.close();
+    if (fs.existsSync(testDbPath)) {
+      fs.unlinkSync(testDbPath);
+    }
+
+    if (failures.length > 0) {
+      console.error(`\n❌ Hardening tests failed with ${failures.length} issues.`);
+      process.exit(1);
+    } else {
+      console.log('\n🎉 ALL HARDENING, SESSIONS, AND VALIDATION TESTS PASSED!');
+      process.exit(0);
+    }
+  } catch (err) {
+    console.error('Hardening tests crashed:', err.message);
+    if (db) await db.close();
+    if (fs.existsSync(testDbPath)) {
+      fs.unlinkSync(testDbPath);
+    }
+    process.exit(1);
   }
-
-  // ─── Test 2: Search items Metadata ───
-  console.log('\nTesting Search items Response Contract...');
-  // Insert active dummy products
-  await db.run('DELETE FROM products WHERE product_id IN (9991, 9992)');
-  await db.run(`
-    INSERT INTO products (product_id, supplier_id, category_id, product_name, description, cost_price, selling_price, product_status, brand, short_description)
-    VALUES 
-      (9991, 1, 2, 'TEST_Refinement product 1', 'Desc 1', 10, 20, 'active', 'RefineBrand', 'Short 1'),
-      (9992, 1, 2, 'TEST_Refinement product 2', 'Desc 2', 15, 30, 'active', 'RefineBrand', 'Short 2')
-  `);
-
-  // Rebuild cache
-  if (global.clearSearchVocabularyCache) {
-    global.clearSearchVocabularyCache();
-  }
-
-  await prodCtrl.getProducts({
-    query: { brand: 'RefineBrand', page: 1, limit: 10 },
-    protocol: 'http',
-    get: () => 'localhost:3000'
-  }, mockRes);
-
-  const prodResp = mockRes.data;
-  if (prodResp && Array.isArray(prodResp.items) && prodResp.total_count === 2 && !prodResp.products) {
-    console.log('SUCCESS: Product search metadata returned items array and total_count successfully.');
-  } else {
-    console.error('FAIL: Product search response mismatch:', prodResp);
-  }
-
-  // ─── Test 3: Server Derived Telemetry User Identity ───
-  console.log('\nTesting Server Derived User Identity...');
-  await db.run('DELETE FROM analytics_events WHERE session_id = "test_sess_refine"');
-
-  // Trigger telemetry log event with req.userId set by middleware mock, ignoring body user_id
-  await analyticsCtrl.logEvent({
-    body: {
-      event_name: 'product_view',
-      user_id: 1234, // spoofed client user_id
-      session_id: 'test_sess_refine',
-      product_id: 9991,
-      category_id: 2
-    },
-    userId: 9999 // Server authenticated userId
-  }, mockRes);
-
-  // Fetch the created event to verify user_id matched server value
-  const event = await db.get('SELECT user_id FROM analytics_events WHERE session_id = "test_sess_refine"');
-  if (event && event.user_id === 9999) {
-    console.log('SUCCESS: Analytics event wrote server-derived user ID, successfully ignoring spoofed client user ID.');
-  } else {
-    console.error('FAIL: Analytics event user ID mismatch. Got:', event);
-  }
-
-  // Cleanup
-  await db.run('DELETE FROM reviews WHERE product_id = 9999');
-  await db.run('DELETE FROM users WHERE user_id = 9999');
-  await db.run('DELETE FROM products WHERE product_id IN (9991, 9992)');
-  await db.run('DELETE FROM analytics_events WHERE session_id = "test_sess_refine"');
-
-  await db.close();
-  fs.unlinkSync(testDbPath);
-  console.log('\nHardening verification tests completed.');
 }
 
-runTests().catch(err => {
-  console.error('Hardening test runner error:', err);
-});
+runTests();

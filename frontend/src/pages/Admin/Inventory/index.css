@@ -381,3 +381,149 @@
     transform: scale(1) translateY(0);
   }
 }
+
+/* ── Controlled Inventory Layout Grid ────────────────────────────────── */
+.inventory-page__grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .inventory-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Touch targets adjustment for mobile */
+.min-touch-target {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+select.min-touch-target,
+input.min-touch-target,
+textarea.min-touch-target {
+  padding: 10px 14px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* Details summary */
+.inventory-page__detail-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  background: var(--color-bg);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 767px) {
+  .inventory-page__detail-summary {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.inventory-page__detail-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inventory-page__detail-metric .label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inventory-page__detail-metric .value {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.inventory-page__detail-metric .value-sub {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+}
+
+/* Card Header */
+.inventory-page__card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inventory-page__card-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.inventory-page__card-header .header-icon {
+  color: var(--color-primary);
+}
+
+/* Form Styles */
+.inventory-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Ledger and Badges */
+.inventory-page__sku-tag {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 12px;
+  background: var(--color-bg-hover);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.ledger-change-val {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.ledger-change-val.plus {
+  color: var(--color-success);
+  background: hsla(162, 73%, 46%, 0.1);
+}
+
+.ledger-change-val.minus {
+  color: var(--color-danger);
+  background: hsla(0, 80%, 62%, 0.1);
+}
+
+/* Mobile specific styling for screen size < 768px */
+@media (max-width: 767px) {
+  .inventory-page__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .ap-table th, 
+  .ap-table td {
+    padding: 10px 8px;
+  }
+}
+

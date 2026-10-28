@@ -1,0 +1,9 @@
+node_modules
+backups
+reports
+*.sqlite
+*.sqlite-journal
+npm-debug.log
+.env
+Dockerfile
+.dockerignore

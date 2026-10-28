@@ -129,13 +129,23 @@ const createOrderController = (database, sendOrderEmail) => ({
           [id]
         );
 
-        // Increment variant available stock
+        // Increment variant available stock & log movement
         for (const item of items) {
+          const invBefore = await database.get('SELECT available_stock FROM inventory WHERE variant_id = ?', [item.variant_id]);
+          const previous_quantity = invBefore ? invBefore.available_stock : 0;
+          const new_quantity = previous_quantity + item.quantity;
+
           await database.run(
             `UPDATE inventory 
-             SET available_stock = available_stock + ?, updated_at = datetime('now') 
+             SET available_stock = ?, updated_at = datetime('now') 
              WHERE variant_id = ?`,
-            [item.quantity, item.variant_id]
+            [new_quantity, item.variant_id]
+          );
+
+          await database.run(
+            `INSERT INTO inventory_movements (variant_id, actor_user_id, movement_type, quantity_change, previous_quantity, new_quantity, notes, created_at)
+             VALUES (?, ?, 'ORDER_CANCELLATION_RESTOCK', ?, ?, ?, ?, datetime('now'))`,
+            [item.variant_id, req.userId, item.quantity, previous_quantity, new_quantity, `Order cancelled: ${order.order_number}`]
           );
         }
 
@@ -283,11 +293,22 @@ const createOrderController = (database, sendOrderEmail) => ({
             [order_id, item.variant_id, item.supplier_id, item.quantity, item.unit_price, line_total]
           );
 
+          const invBefore = await database.get('SELECT available_stock FROM inventory WHERE variant_id = ?', [item.variant_id]);
+          if (!invBefore) {
+            throw new Error(`Inventory record not found for variant ID ${item.variant_id}`);
+          }
+          const previous_quantity = invBefore.available_stock;
+          const new_quantity = previous_quantity - item.quantity;
+
+          if (new_quantity < 0) {
+            throw new Error(`Insufficient stock for ${item.product_name}`);
+          }
+
           const invResult = await database.run(
             `UPDATE inventory
-             SET available_stock = available_stock - ?, updated_at = datetime('now')
-             WHERE variant_id = ? AND available_stock >= ?`,
-            [item.quantity, item.variant_id, item.quantity]
+             SET available_stock = ?, updated_at = datetime('now')
+             WHERE variant_id = ?`,
+            [new_quantity, item.variant_id]
           );
           if (invResult.changes === 0) {
             throw new Error(`Inventory update failed for ${item.product_name} — possible stock discrepancy`);
@@ -295,9 +316,9 @@ const createOrderController = (database, sendOrderEmail) => ({
 
           // Log Inventory Movement
           await database.run(
-            `INSERT INTO inventory_movements (variant_id, change, reason, created_by)
-             VALUES (?, ?, 'sale', 'system')`,
-            [item.variant_id, -item.quantity]
+            `INSERT INTO inventory_movements (variant_id, actor_user_id, movement_type, quantity_change, previous_quantity, new_quantity, notes, created_at)
+             VALUES (?, ?, 'ORDER_SALE', ?, ?, ?, ?, datetime('now'))`,
+            [item.variant_id, request.userId || 1, -item.quantity, previous_quantity, new_quantity, `Order placed: ${orderNumber}`]
           );
 
           // Check if reorder level reached, generate active alert if needed
@@ -362,7 +383,7 @@ const createOrderController = (database, sendOrderEmail) => ({
         await database.run('COMMIT');
 
         try {
-          await sendOrderEmail(orderNumber, name, email, address, dbMethod, emailItems, total);
+          await sendOrderEmail(orderNumber, name, email, address, dbMethod, emailItems, total, phone || '');
         } catch (emailErr) {
           console.error('Email notification failed (order preserved):', emailErr.message);
         }

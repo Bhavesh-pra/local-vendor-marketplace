@@ -1,0 +1,31 @@
+.supplier-analytics {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.supplier-analytics__alerts-panel {
+  animation: slideIn 0.25s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.supplier-card-title {
+  margin: 0;
+  color: var(--color-text-heading);
+}
+
+@media (max-width: 767px) {
+  .supplier-analytics__grid {
+    grid-template-columns: 1fr !important;
+  }
+}

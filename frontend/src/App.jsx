@@ -26,6 +26,8 @@ const LazyProfile        = lazy(() => import('./pages/Profile/index.jsx'));
 const LazyOrderSuccess   = lazy(() => import('./pages/OrderSuccess/index.jsx'));
 const LazyNotifications  = lazy(() => import('./pages/Notifications/index.jsx'));
 const LazyNotFound       = lazy(() => import('./pages/NotFound/index.jsx'));
+const LazyPayment        = lazy(() => import('./pages/Checkout/components/PaymentPage.jsx'));
+const LazyWalletDashboard = lazy(() => import('./pages/Customer/WalletDashboard/index.jsx'));
 
 // Admin pages
 const LazyAdminLayout    = lazy(() => import('./pages/Admin/AdminLayout/index.jsx'));
@@ -44,6 +46,13 @@ const LazyAdminReviews     = lazy(() => import('./pages/Admin/Reviews/index.jsx'
 const LazyAdminCoupons     = lazy(() => import('./pages/Admin/Coupons/index.jsx'));
 const LazyAdminInventory   = lazy(() => import('./pages/Admin/Inventory/index.jsx'));
 const LazyAdminSettings    = lazy(() => import('./pages/Admin/Settings/index.jsx'));
+const LazyAdminPurchaseOrders = lazy(() => import('./pages/Admin/PurchaseOrders/index.jsx'));
+const LazyAdminSupplierPerformance = lazy(() => import('./pages/Admin/SupplierPerformance/index.jsx'));
+const LazyAdminInventoryForecast = lazy(() => import('./pages/Admin/InventoryForecast/index.jsx'));
+const LazyAdminOperationsMetrics = lazy(() => import('./pages/Admin/OperationsMetrics/index.jsx'));
+const LazyAdminFinance      = lazy(() => import('./pages/Admin/FinanceDashboard/index.jsx'));
+const LazySupplierPurchaseOrders = lazy(() => import('./pages/Supplier/PurchaseOrders/index.jsx'));
+const LazySupplierAnalytics = lazy(() => import('./pages/Supplier/Analytics/index.jsx'));
 
 // ─── Loading fallback ──────────────────────────────────────────────────────────
 function PageLoadingFallback() {
@@ -93,6 +102,8 @@ function AppRoutes() {
         <Route path={ROUTES.PROFILE}  element={<LazyRoute element={LazyProfile} />} />
         <Route path={ROUTES.ORDER_SUCCESS} element={<LazyRoute element={LazyOrderSuccess} />} />
         <Route path={ROUTES.NOTIFICATIONS} element={<LazyRoute element={LazyNotifications} />} />
+        <Route path={ROUTES.PAYMENT}       element={<LazyRoute element={LazyPayment} />} />
+        <Route path={ROUTES.CUSTOMER_WALLET} element={<LazyRoute element={LazyWalletDashboard} />} />
       </Route>
 
       {/* Shared Admin & Supplier dashboard routes */}
@@ -101,6 +112,8 @@ function AppRoutes() {
           <Route path={ROUTES.ADMIN_PRODUCTS}        element={<LazyRoute element={LazyAdminProductList} />} />
           <Route path={ROUTES.ADMIN_PRODUCTS_CREATE} element={<LazyRoute element={LazyAdminCreateProduct} />} />
           <Route path={ROUTES.ADMIN_PRODUCTS_EDIT}   element={<LazyRoute element={LazyAdminEditProduct} />} />
+          <Route path={ROUTES.SUPPLIER_PURCHASE_ORDERS} element={<LazyRoute element={LazySupplierPurchaseOrders} />} />
+          <Route path={ROUTES.SUPPLIER_ANALYTICS} element={<LazyRoute element={LazySupplierAnalytics} />} />
         </Route>
       </Route>
 
@@ -119,6 +132,11 @@ function AppRoutes() {
           <Route path={ROUTES.ADMIN_REVIEWS}         element={<LazyRoute element={LazyAdminReviews} />} />
           <Route path={ROUTES.ADMIN_COUPONS}         element={<LazyRoute element={LazyAdminCoupons} />} />
           <Route path={ROUTES.ADMIN_SETTINGS}        element={<LazyRoute element={LazyAdminSettings} />} />
+          <Route path={ROUTES.ADMIN_PURCHASE_ORDERS} element={<LazyRoute element={LazyAdminPurchaseOrders} />} />
+          <Route path={ROUTES.ADMIN_SUPPLIER_PERFORMANCE} element={<LazyRoute element={LazyAdminSupplierPerformance} />} />
+          <Route path={ROUTES.ADMIN_INVENTORY_FORECAST}   element={<LazyRoute element={LazyAdminInventoryForecast} />} />
+          <Route path={ROUTES.ADMIN_OPERATIONS_METRICS}   element={<LazyRoute element={LazyAdminOperationsMetrics} />} />
+          <Route path={ROUTES.ADMIN_FINANCE}              element={<LazyRoute element={LazyAdminFinance} />} />
         </Route>
       </Route>
 

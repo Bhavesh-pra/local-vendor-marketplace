@@ -2,7 +2,18 @@ import React from 'react';
 import { Landmark, Smartphone, CreditCard } from 'lucide-react';
 import './CheckoutPaymentSelector.css';
 
+import { Wallet } from 'lucide-react';
+import { getWalletBalance } from '../../../services/paymentService.js';
+
 export function CheckoutPaymentSelector({ selectedMethod, onChange }) {
+  const [walletBalance, setWalletBalance] = React.useState(null);
+
+  React.useEffect(() => {
+    getWalletBalance()
+      .then((res) => setWalletBalance(res.balance))
+      .catch(() => setWalletBalance(0));
+  }, []);
+
   const options = [
     {
       id: 'COD',
@@ -16,16 +27,21 @@ export function CheckoutPaymentSelector({ selectedMethod, onChange }) {
       label: 'UPI / Net Banking',
       description: 'Pay instantly using any UPI app',
       icon: Smartphone,
-      enabled: false,
-      badge: 'Coming Soon'
+      enabled: true
     },
     {
       id: 'CARD',
       label: 'Debit / Credit Card',
       description: 'Visa, Mastercard, RuPay & Maestro',
       icon: CreditCard,
-      enabled: false,
-      badge: 'Coming Soon'
+      enabled: true
+    },
+    {
+      id: 'WALLET',
+      label: 'Internal Wallet',
+      description: walletBalance !== null ? `Balance: ₹${walletBalance.toFixed(2)}` : 'Pay instantly from your wallet balance',
+      icon: Wallet,
+      enabled: true
     }
   ];
 

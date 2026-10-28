@@ -15,12 +15,48 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { getCarts, getCartItemsById, getCartSummary } from '../../services/cartService.js';
 import { getProducts } from '../../services/productService.js';
 import { placeOrder } from '../../services/orderService.js';
+import { initiatePayment } from '../../services/paymentService.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { extractErrorMessage } from '../../utils/extractErrorMessage.js';
 import { useTelemetry } from '../../hooks/useTelemetry.js';
 import { ROUTES } from '../../constants/routes.js';
 import { AlertCircle } from 'lucide-react';
 import './index.css';
+
+const CHECKOUT_STORAGE_KEYS = {
+  name: 'checkout_name',
+  phone: 'checkout_phone',
+  email: 'checkout_email',
+  addressLine1: 'checkout_address_line1',
+  addressLine2: 'checkout_address_line2',
+  city: 'checkout_city',
+  state: 'checkout_state',
+  pincode: 'checkout_pincode'
+};
+
+const readCheckoutDraft = (key) => {
+  try {
+    return sessionStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+};
+
+const writeCheckoutDraft = (key, value) => {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // Checkout must keep working even when browser storage is unavailable.
+  }
+};
+
+const clearCheckoutDraft = () => {
+  try {
+    Object.values(CHECKOUT_STORAGE_KEYS).forEach((key) => sessionStorage.removeItem(key));
+  } catch {
+    // Non-critical cleanup.
+  }
+};
 
 /**
  * Checkout Page — collects shipping & payment info, displays order summary,
@@ -72,16 +108,16 @@ export default function Checkout() {
     final_total: 0
   });
 
-  // Prefill customer profile & last used address from localStorage on mount
+  // Prefill only from the active checkout tab, not persistent browser storage.
   useEffect(() => {
-    const cachedName = localStorage.getItem('checkout_name') || user?.username || '';
-    const cachedPhone = localStorage.getItem('checkout_phone') || '';
-    const cachedEmail = localStorage.getItem('checkout_email') || '';
-    const cachedAddr1 = localStorage.getItem('checkout_address_line1') || '';
-    const cachedAddr2 = localStorage.getItem('checkout_address_line2') || '';
-    const cachedCity = localStorage.getItem('checkout_city') || '';
-    const cachedState = localStorage.getItem('checkout_state') || '';
-    const cachedPin = localStorage.getItem('checkout_pincode') || '';
+    const cachedName = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.name) || user?.username || '';
+    const cachedPhone = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.phone);
+    const cachedEmail = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.email);
+    const cachedAddr1 = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.addressLine1);
+    const cachedAddr2 = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.addressLine2);
+    const cachedCity = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.city);
+    const cachedState = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.state);
+    const cachedPin = readCheckoutDraft(CHECKOUT_STORAGE_KEYS.pincode);
 
     setFormData((prev) => ({
       ...prev,
@@ -228,6 +264,10 @@ export default function Checkout() {
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+
+    if (CHECKOUT_STORAGE_KEYS[id]) {
+      writeCheckoutDraft(CHECKOUT_STORAGE_KEYS[id], value);
+    }
     
     // Clear errors dynamically
     const errorMsg = validateField(id, value);
@@ -284,16 +324,6 @@ export default function Checkout() {
         ...(appliedCoupon ? { coupon_code: appliedCoupon.coupon_code } : {})
       });
 
-      // Persist delivery address in localStorage
-      localStorage.setItem('checkout_name', formData.name.trim());
-      localStorage.setItem('checkout_phone', formData.phone.trim());
-      localStorage.setItem('checkout_email', formData.email.trim());
-      localStorage.setItem('checkout_address_line1', formData.addressLine1.trim());
-      localStorage.setItem('checkout_address_line2', formData.addressLine2?.trim() || '');
-      localStorage.setItem('checkout_city', formData.city.trim());
-      localStorage.setItem('checkout_state', formData.state.trim());
-      localStorage.setItem('checkout_pincode', formData.pincode.trim());
-
       // Ensure the processing loader is visible for at least 900ms
       const duration = Date.now() - startTime;
       const remainingDelay = Math.max(0, 900 - duration);
@@ -302,16 +332,27 @@ export default function Checkout() {
       }
 
       resetCart();
-      showToast('success', 'Order placed successfully!');
-      
+      clearCheckoutDraft();
       const orderId = response.order_id;
       trackEvent('purchase_complete', {
         metadata: {
           order_id: orderId,
-          total_amount: grandTotal
+          total_amount: summary.final_total
         }
       });
-      navigate(`/order-success/${orderId}`, { replace: true });
+
+      if (formData.paymentMethod === 'COD') {
+        showToast('success', 'Order placed successfully!');
+        navigate(`/order-success/${orderId}`, { replace: true });
+      } else {
+        showToast('info', 'Redirecting to payment gateway...');
+        try {
+          await initiatePayment(orderId, formData.paymentMethod, `initiate-${orderId}`);
+        } catch (initErr) {
+          console.warn('Failed to initiate payment on first attempt, will try again on payment page:', initErr.message);
+        }
+        navigate(`/payment/${orderId}`, { replace: true });
+      }
     } catch (err) {
       setBackendError(extractErrorMessage(err, 'Failed to place order. Please try again.'));
       setSubmitting(false);
@@ -449,4 +490,3 @@ export default function Checkout() {
     </PageLayout>
   );
 }
-

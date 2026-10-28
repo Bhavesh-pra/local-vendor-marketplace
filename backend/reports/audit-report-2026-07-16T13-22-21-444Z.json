@@ -1,0 +1,69 @@
+[
+  {
+    "title": "Foreign Key Violations",
+    "status": "FAIL",
+    "count": 633,
+    "samples": [
+      {
+        "table": "order_items_legacy",
+        "rowid": 1,
+        "parent": "orders_old",
+        "fkid": 2
+      },
+      {
+        "table": "order_items_legacy",
+        "rowid": 2,
+        "parent": "orders_old",
+        "fkid": 2
+      },
+      {
+        "table": "order_items_legacy",
+        "rowid": 3,
+        "parent": "orders_old",
+        "fkid": 2
+      },
+      {
+        "table": "order_items_legacy",
+        "rowid": 4,
+        "parent": "orders_old",
+        "fkid": 2
+      },
+      {
+        "table": "order_items_legacy",
+        "rowid": 5,
+        "parent": "orders_old",
+        "fkid": 2
+      }
+    ]
+  },
+  {
+    "title": "Orphaned Orders (No User)",
+    "status": "PASS",
+    "count": 0
+  },
+  {
+    "title": "Orphaned Order Items (No Variant)",
+    "status": "PASS",
+    "count": 0
+  },
+  {
+    "title": "Orphaned Payments (No Order)",
+    "status": "ERROR",
+    "message": "SQLITE_ERROR: no such column: transaction_id"
+  },
+  {
+    "title": "Invalid Payout Records (Negative amount or missing supplier)",
+    "status": "PASS",
+    "count": 0
+  },
+  {
+    "title": "Negative Wallet Balances",
+    "status": "PASS",
+    "count": 0
+  },
+  {
+    "title": "Duplicate Idempotency Keys in Payments",
+    "status": "PASS",
+    "count": 0
+  }
+]

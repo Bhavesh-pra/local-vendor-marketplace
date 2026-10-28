@@ -357,7 +357,7 @@ async function runTests() {
   console.log('All tests passed successfully!');
 
   // Cleanup test database
-  db.close();
+  await db.close();
   if (fs.existsSync(testDbPath)) {
     fs.unlinkSync(testDbPath);
   }

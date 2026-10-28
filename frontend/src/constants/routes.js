@@ -30,6 +30,17 @@ export const ROUTES = {
   ADMIN_REVIEWS:         '/admin/reviews',
   ADMIN_COUPONS:         '/admin/coupons',
   ADMIN_SETTINGS:        '/admin/settings',
+  ADMIN_PURCHASE_ORDERS: '/admin/purchase-orders',
+  ADMIN_SUPPLIER_PERFORMANCE: '/admin/supplier-performance',
+  ADMIN_INVENTORY_FORECAST:   '/admin/inventory-forecast',
+  ADMIN_OPERATIONS_METRICS:   '/admin/operations-metrics',
+  SUPPLIER_ANALYTICS:         '/supplier/analytics',
+  SUPPLIER_PURCHASE_ORDERS: '/supplier/purchase-orders',
+
+  // ─── Phase 8 Routes ────────────────────────────────────────────────────
+  PAYMENT:                    '/payment/:orderId',
+  CUSTOMER_WALLET:            '/customer/wallet',
+  ADMIN_FINANCE:              '/admin/finance',
 };
 
 /**

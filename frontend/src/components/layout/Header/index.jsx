@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, X, User, LogOut, Package, Bell } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, Package, Bell, Wallet } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth.js';
 import { useCart } from '../../../hooks/useCart.js';
 import { ROUTES } from '../../../constants/routes.js';
@@ -320,6 +320,14 @@ export function Header() {
                       <User size={14} className="header__dropdown-icon" />
                       <span>Account Profile</span>
                     </Link>
+                    <Link
+                      to={ROUTES.CUSTOMER_WALLET}
+                      className="header__dropdown-link"
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <Wallet size={14} className="header__dropdown-icon" />
+                      <span>My Wallet</span>
+                    </Link>
                     {isSupplierOrAdmin && (
                       <Link
                         to={ROUTES.ADMIN_PRODUCTS}
@@ -412,6 +420,9 @@ export function Header() {
                 </NavLink>
                 <NavLink to={ROUTES.PROFILE} className="header__drawer-link" onClick={closeDrawer}>
                   Profile
+                </NavLink>
+                <NavLink to={ROUTES.CUSTOMER_WALLET} className="header__drawer-link" onClick={closeDrawer}>
+                  My Wallet
                 </NavLink>
                 {isSupplierOrAdmin && (
                   <NavLink to={ROUTES.ADMIN_PRODUCTS} className="header__drawer-link" onClick={closeDrawer}>

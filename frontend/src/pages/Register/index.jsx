@@ -154,7 +154,7 @@ export default function Register() {
           <footer className="register-page__footer">
             <p className="register-page__footer-text">
               Already have an account?{' '}
-              <Link to={ROUTES.ROUTES_LOGIN || ROUTES.LOGIN} className="register-page__link">
+              <Link to={ROUTES.LOGIN} className="register-page__link">
                 Sign In
               </Link>
             </p>

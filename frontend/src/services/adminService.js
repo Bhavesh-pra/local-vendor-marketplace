@@ -17,6 +17,34 @@ export const adminService = {
   getAnalytics: () =>
     axiosInstance.get(`${BASE}/analytics`).then((r) => r.data),
 
+  getSalesAnalytics: () =>
+    axiosInstance.get(`${BASE}/analytics/sales`).then((r) => r.data),
+
+  getOrderAnalytics: () =>
+    axiosInstance.get(`${BASE}/analytics/orders`).then((r) => r.data),
+
+  getCustomerAnalytics: () =>
+    axiosInstance.get(`${BASE}/analytics/customers`).then((r) => r.data),
+
+  getProductAnalytics: () =>
+    axiosInstance.get(`${BASE}/analytics/products`).then((r) => r.data),
+
+  getFunnelAnalytics: () =>
+    axiosInstance.get(`${BASE}/analytics/funnel`).then((r) => r.data),
+
+  getOperationalMetrics: () =>
+    axiosInstance.get(`${BASE}/analytics/operational`).then((r) => r.data),
+
+  getSupplierAnalytics: (supplierId) => {
+    const url = supplierId
+      ? `${BASE}/supplier/analytics?supplier_id=${supplierId}`
+      : `${BASE}/supplier/analytics`;
+    return axiosInstance.get(url).then((r) => r.data);
+  },
+
+  getDashboardSummary: () =>
+    axiosInstance.get(`${BASE}/analytics/dashboard-summary`).then((r) => r.data),
+
   // ─── Products ───────────────────────────────────────────────────────────
   getAllProducts: () =>
     axiosInstance.get(`${BASE}/products`).then((r) => r.data),
@@ -95,16 +123,13 @@ export const adminService = {
   getInventory: () =>
     axiosInstance.get(`${BASE}/inventory`).then((r) => r.data),
 
-  adjustInventory: (variant_id, change, reason) =>
+  adjustInventory: (variant_id, movement_type, quantity, notes) =>
     axiosInstance
-      .post(`${BASE}/inventory/adjust`, { variant_id, change, reason })
+      .post(`${BASE}/inventory/adjust`, { variant_id, movement_type, quantity, notes })
       .then((r) => r.data),
 
-  getInventoryValue: () =>
-    axiosInstance.get(`${BASE}/inventory/value`).then((r) => r.data),
-
-  getInventoryHistory: (limit = 50) =>
-    axiosInstance.get(`${BASE}/inventory/history?limit=${limit}`).then((r) => r.data),
+  getInventoryHistoryByVariant: (variant_id) =>
+    axiosInstance.get(`${BASE}/inventory/history/${variant_id}`).then((r) => r.data),
 
   getAlerts: () =>
     axiosInstance.get(`${BASE}/alerts`).then((r) => r.data),
@@ -121,4 +146,38 @@ export const adminService = {
 
   updateCoupon: (id, payload) =>
     axiosInstance.patch(`${BASE}/coupons/${id}`, payload).then((r) => r.data),
+
+  // ─── Purchase Orders ───────────────────────────────────────────────────
+  getPurchaseOrders: () =>
+    axiosInstance.get(`${BASE}/purchase-orders`).then((r) => r.data),
+
+  createPurchaseOrder: (payload) =>
+    axiosInstance.post(`${BASE}/purchase-orders`, payload).then((r) => r.data),
+
+  getPurchaseOrderDetails: (id) =>
+    axiosInstance.get(`${BASE}/purchase-orders/${id}`).then((r) => r.data),
+
+  updatePurchaseOrderStatus: (id, status) =>
+    axiosInstance.patch(`${BASE}/purchase-orders/${id}/status`, { status }).then((r) => r.data),
+
+  receivePurchaseOrderInventory: (id, payload) =>
+    axiosInstance.post(`${BASE}/purchase-orders/${id}/receive`, payload).then((r) => r.data),
+
+  getSupplierPurchaseOrders: () =>
+    axiosInstance.get('/supplier/purchase-orders').then((r) => r.data),
+
+  getSupplierPurchaseOrderDetails: (id) =>
+    axiosInstance.get(`/supplier/purchase-orders/${id}`).then((r) => r.data),
+
+  acknowledgePurchaseOrder: (id) =>
+    axiosInstance.patch(`/supplier/purchase-orders/${id}/acknowledge`).then((r) => r.data),
+
+  getSupplierPerformance: () =>
+    axiosInstance.get(`${BASE}/supplier-performance`).then((r) => r.data),
+
+  getInventoryForecast: () =>
+    axiosInstance.get(`${BASE}/inventory-forecast`).then((r) => r.data),
+
+  getOperationsMetrics: () =>
+    axiosInstance.get(`${BASE}/operations-metrics`).then((r) => r.data),
 };

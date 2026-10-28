@@ -305,9 +305,9 @@ const createProductController = (database) => ({
 
           if (initialStock > 0) {
             await database.run(
-              `INSERT INTO inventory_movements (variant_id, change, reason, created_by)
-               VALUES (?, ?, 'manual_adjustment', ?)`,
-              [variant_id, initialStock, request.username || 'supplier']
+              `INSERT INTO inventory_movements (variant_id, actor_user_id, movement_type, quantity_change, previous_quantity, new_quantity, notes, created_at)
+               VALUES (?, ?, 'SUPPLIER_RESTOCK', ?, 0, ?, 'Initial stock on product creation', datetime('now'))`,
+              [variant_id, request.userId || 1, initialStock, initialStock]
             );
           }
         }
@@ -1099,7 +1099,11 @@ const createProductController = (database) => ({
         }
 
         const variants = await database.all(
-          `SELECT pv.*, IFNULL(i.available_stock, 0) AS available_stock, IFNULL(i.reorder_level, 10) AS reorder_level
+          `SELECT pv.*, 
+                  IFNULL(i.available_stock, 0) AS available_stock, 
+                  IFNULL(i.reorder_level, 10) AS reorder_level,
+                  i.last_restock_date,
+                  (SELECT MAX(created_at) FROM inventory_movements WHERE variant_id = pv.variant_id) AS last_movement_date
            FROM product_variants pv 
            LEFT JOIN inventory i ON pv.variant_id = i.variant_id
            WHERE pv.product_id = ? AND pv.status <> 'archived'`,
@@ -1180,6 +1184,9 @@ const createProductController = (database) => ({
           if (!isPrivileged) {
             delete mapped.cost_price;
             delete mapped.cost_override;
+            delete mapped.reorder_level;
+            delete mapped.last_restock_date;
+            delete mapped.last_movement_date;
           } else {
             mapped.cost_price = v.cost_override ?? product.cost_price;
           }

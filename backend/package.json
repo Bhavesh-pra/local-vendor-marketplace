@@ -7,8 +7,9 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "seed:phase4-discovery": "node scripts/seedPhase4DiscoveryDataset.js",
-    "test": "npm run test:phase5",
+    "test": "npm run test:phase5 && node tests/dashboard.test.js && node tests/inventory.test.js && node tests/purchaseOrders.test.js && node tests/supplierPerformance.test.js && node tests/forecasting.test.js && node tests/operationsMetrics.test.js && node tests/analytics.test.js && node tests/operational.test.js && node tests/supplierAnalytics.test.js && node tests/payments.test.js && npm run test:hardening",
     "test:phase5": "node tests/returns.test.js && node tests/returnsWorkflow.test.js && node tests/reviewTrust.test.js && node tests/coupons.test.js && node tests/notifications.test.js && node tests/trust.test.js",
+    "test:hardening": "node tests/hardening.test.js && node tests/securityHeaders.test.js && node tests/authRegression.test.js",
     "test:coupons": "node tests/coupons.test.js",
     "test:notifications": "node tests/notifications.test.js"
   },
@@ -20,12 +21,16 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.6",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.2.2"
   }
 }

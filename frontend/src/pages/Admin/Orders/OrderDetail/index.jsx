@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, User, CreditCard, MapPin, ClipboardList, CheckCircle2, Truck, ArrowRightLeft, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, User, CreditCard, MapPin, ClipboardList, CheckCircle2, Truck, ArrowRightLeft, XCircle, RefreshCw, Banknote } from 'lucide-react';
 import { adminService } from '../../../../services/adminService.js';
+import { markCodCollected } from '../../../../services/paymentService.js';
 import { ROUTES } from '../../../../constants/routes.js';
 import { useToast } from '../../../../hooks/useToast.js';
 import { useDocumentTitle } from '../../../../hooks/useDocumentTitle.js';
@@ -20,6 +21,8 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState(null);
+  const [codNotes, setCodNotes] = useState('');
+  const [collectingCod, setCollectingCod] = useState(false);
 
   const fetchOrderDetail = async () => {
     try {
@@ -39,6 +42,22 @@ export default function OrderDetail() {
   useEffect(() => {
     fetchOrderDetail();
   }, [id]);
+
+  const handleMarkCodPaid = async () => {
+    try {
+      setCollectingCod(true);
+      await markCodCollected(order.order_id, codNotes || undefined);
+      showToast('success', 'COD cash marked as collected. Payment status updated to Paid.');
+      setCodNotes('');
+      const updated = await adminService.getOrderById(id);
+      setOrder(updated);
+    } catch (err) {
+      const errMsg = extractErrorMessage(err, 'Failed to mark COD as collected');
+      showToast('error', errMsg);
+    } finally {
+      setCollectingCod(false);
+    }
+  };
 
   const handleQuickStatusUpdate = async (newStatus) => {
     try {
@@ -418,6 +437,35 @@ export default function OrderDetail() {
                   Lifecycle finished. No actions available.
                 </p>
               )}
+
+              {/* COD: Mark Cash Collected */}
+              {order.payment_method === 'COD' && order.payment_status !== 'paid' && !['cancelled'].includes(order.status) && (
+                <div style={{ marginTop: '16px', padding: '12px', background: 'hsla(43, 90%, 55%, 0.08)', border: '1px solid hsla(43, 90%, 55%, 0.3)', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <Banknote size={16} style={{ color: 'var(--color-warning)' }} />
+                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--color-warning)' }}>COD Cash Not Yet Collected</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '10px', lineHeight: '1.5' }}>
+                    Confirm when delivery agent has physically collected the cash from the customer.
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="Optional notes (e.g. collection reference)..."
+                    value={codNotes}
+                    onChange={(e) => setCodNotes(e.target.value)}
+                    style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--color-border)', marginBottom: '10px', fontSize: '13px', background: 'var(--color-surface)', color: 'var(--color-text)', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    className="ap-btn ap-btn--success"
+                    disabled={collectingCod}
+                    onClick={handleMarkCodPaid}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                  >
+                    <Banknote size={15} />
+                    {collectingCod ? 'Recording...' : 'Mark Cash Collected'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -436,11 +484,20 @@ export default function OrderDetail() {
                 <span className="order-detail__label">Status</span>
                 <span
                   className={`ap-badge ${
-                    order.payment_status === 'paid' ? 'ap-badge--green' : 'ap-badge--yellow'
+                    order.payment_status === 'paid' ? 'ap-badge--green'
+                    : order.payment_status === 'failed' ? 'ap-badge--red'
+                    : order.payment_status === 'refunded' ? 'ap-badge--blue'
+                    : order.payment_status === 'partially_refunded' ? 'ap-badge--blue'
+                    : 'ap-badge--yellow'
                   }`}
                   style={{ width: 'fit-content' }}
                 >
-                  {order.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                  {order.payment_status === 'paid' ? 'Paid'
+                    : order.payment_status === 'failed' ? 'Failed'
+                    : order.payment_status === 'refunded' ? 'Refunded'
+                    : order.payment_status === 'partially_refunded' ? 'Partially Refunded'
+                    : order.payment_status === 'pending' ? 'Pending'
+                    : order.payment_status || 'Unknown'}
                 </span>
               </div>
             </div>

@@ -22,7 +22,7 @@ const createAdminRoutes = (adminController) => {
   const router = express.Router();
 
   // ─── Dashboard ──────────────────────────────────────────────────────────
-  router.get('/admin/dashboard', ...adminGuard, adminController.getDashboardStats);
+  router.get('/admin/dashboard', ...productGuard, adminController.getDashboardStats);
 
   // ─── Analytics ──────────────────────────────────────────────────────────
   router.get('/admin/analytics', ...adminGuard, adminController.getAnalytics);
@@ -42,9 +42,24 @@ const createAdminRoutes = (adminController) => {
   router.get('/admin/inventory',         ...adminGuard, adminController.getInventory);
   router.post('/admin/inventory/adjust', ...adminGuard, adminController.adjustInventory);
   router.get('/admin/inventory/value',   ...adminGuard, adminController.getInventoryValue);
-  router.get('/admin/inventory/history', ...adminGuard, adminController.getInventoryHistory);
+  router.get('/admin/inventory/history/:variant_id', ...adminGuard, adminController.getInventoryHistoryByVariant);
   router.get('/admin/alerts',            ...adminGuard, adminController.getAlerts);
   router.patch('/admin/alerts/:id/resolve', ...adminGuard, adminController.resolveAlert);
+
+  // ─── Phase 6D, 6E, 6F Endpoints ──────────────────────────────────────────
+  router.get('/admin/supplier-performance', ...adminGuard, adminController.getSupplierPerformance);
+  router.get('/admin/inventory-forecast',   ...adminGuard, adminController.getInventoryForecast);
+  router.get('/admin/operations-metrics',   ...adminGuard, adminController.getOperationsMetrics);
+
+  // ─── Phase 7 Endpoints ──────────────────────────────────────────────────
+  router.get('/admin/analytics/sales', ...adminGuard, adminController.getSalesAnalytics);
+  router.get('/admin/analytics/orders', ...adminGuard, adminController.getOrderAnalytics);
+  router.get('/admin/analytics/customers', ...adminGuard, adminController.getCustomerAnalytics);
+  router.get('/admin/analytics/products', ...adminGuard, adminController.getProductAnalytics);
+  router.get('/admin/analytics/funnel', ...adminGuard, adminController.getFunnelAnalytics);
+  router.get('/admin/analytics/operational', ...adminGuard, adminController.getOperationalMetrics);
+  router.get('/admin/analytics/dashboard-summary', ...adminGuard, adminController.getDashboardSummary);
+  router.get('/admin/supplier/analytics', ...productGuard, adminController.getSupplierAnalytics);
 
   // ─── Orders ─────────────────────────────────────────────────────────────
   router.get('/admin/orders',              ...adminGuard, adminController.getAllOrders);

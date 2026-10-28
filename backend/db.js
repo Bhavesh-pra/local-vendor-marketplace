@@ -4,12 +4,44 @@ const sqlite3 = require('sqlite3');
 
 let database = null;
 
+const wrapDbWithTelemetry = (db) => {
+  const originalRun = db.run.bind(db);
+  const originalGet = db.get.bind(db);
+  const originalAll = db.all.bind(db);
+  const originalExec = db.exec.bind(db);
+
+  const measureAndRun = async (originalMethod, sql, ...params) => {
+    const start = process.hrtime();
+    try {
+      return await originalMethod(sql, ...params);
+    } finally {
+      const diff = process.hrtime(start);
+      const durationMs = (diff[0] * 1e3 + diff[1] * 1e-6);
+      if (durationMs > 200) {
+        console.warn(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: 'WARNING',
+          type: 'DB_SLOW_QUERY',
+          duration_ms: durationMs,
+          sql: typeof sql === 'string' ? sql.substring(0, 500) : '[Statement]'
+        }));
+      }
+    }
+  };
+
+  db.run = (sql, ...params) => measureAndRun(originalRun, sql, ...params);
+  db.get = (sql, ...params) => measureAndRun(originalGet, sql, ...params);
+  db.all = (sql, ...params) => measureAndRun(originalAll, sql, ...params);
+  db.exec = (sql) => measureAndRun(originalExec, sql);
+};
+
 const initDb = async () => {
-  const dbPath = path.join(__dirname, 'ecommerce.sqlite');
+  const dbPath = process.env.DATABASE_PATH ? path.resolve(__dirname, process.env.DATABASE_PATH) : path.join(__dirname, 'ecommerce.sqlite');
   database = await open({
     filename: dbPath,
     driver: sqlite3.Database,
   });
+  wrapDbWithTelemetry(database);
 
   // Clean up any duplicate active carts (keep only the latest one per user)
   await database.run(`
@@ -107,6 +139,16 @@ const initDb = async () => {
   await addColumnIfNotExists('products', 'slug', 'TEXT');
   await addColumnIfNotExists('products', 'mrp', 'NUMERIC');
   await addColumnIfNotExists('products', 'badge', 'TEXT');
+  await addColumnIfNotExists('products', 'cost_price', 'NUMERIC');
+  try {
+    await database.run(`
+      UPDATE products
+      SET cost_price = ROUND(selling_price * 0.6, 2)
+      WHERE cost_price IS NULL OR cost_price = 0
+    `);
+  } catch (err) {
+    console.error("Error backfilling cost_price:", err.message);
+  }
 
   // Create unique index on slug (SQLite doesn't support adding UNIQUE constraints via ALTER TABLE directly)
   await database.run(`CREATE UNIQUE INDEX IF NOT EXISTS ux_products_slug ON products(slug)`);
@@ -656,6 +698,486 @@ const initDb = async () => {
     console.log("Phase 5E notifications database structures initialized successfully.");
   } catch (err) {
     console.error("Error setting up Phase 5E notifications database structures:", err.message);
+  }
+
+  // ─── Phase 6B Inventory Movements ──────────────────────────────────────────
+  try {
+    let dropAndRecreateMovements = false;
+    const info = await database.all("PRAGMA table_info(inventory_movements)");
+    if (info.length > 0) {
+      const hasActorUserId = info.some(col => col.name === 'actor_user_id');
+      if (!hasActorUserId) {
+        dropAndRecreateMovements = true;
+      }
+    } else {
+      dropAndRecreateMovements = true;
+    }
+
+    if (dropAndRecreateMovements) {
+      await database.run("DROP TABLE IF EXISTS inventory_movements");
+      await database.run(`
+        CREATE TABLE inventory_movements (
+            movement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            variant_id         INTEGER NOT NULL,
+            actor_user_id      INTEGER NOT NULL,
+            movement_type      TEXT NOT NULL,
+            quantity_change    INTEGER NOT NULL,
+            previous_quantity  INTEGER NOT NULL,
+            new_quantity       INTEGER NOT NULL,
+            notes              TEXT,
+            created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id),
+            FOREIGN KEY (actor_user_id) REFERENCES users(user_id)
+        )
+      `);
+      console.log("Created inventory_movements table with Phase 6B schema.");
+    }
+
+    await database.run("CREATE INDEX IF NOT EXISTS idx_inventory_variant ON inventory_movements(variant_id)");
+    await database.run("CREATE INDEX IF NOT EXISTS idx_inventory_created ON inventory_movements(created_at)");
+  } catch (err) {
+    console.error("Error setting up Phase 6B inventory movements database structures:", err.message);
+  }
+
+  // ─── Phase 6C Purchase Orders & Supplier Procurement ─────────────────────
+  try {
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS purchase_orders (
+          po_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          supplier_id INTEGER NOT NULL,
+          status TEXT NOT NULL DEFAULT 'DRAFT'
+              CHECK(status IN (
+                  'DRAFT',
+                  'SENT',
+                  'ACKNOWLEDGED',
+                  'PARTIALLY_RECEIVED',
+                  'RECEIVED',
+                  'CANCELLED'
+              )),
+          notes TEXT,
+          created_by INTEGER NOT NULL,
+          created_at TEXT NOT NULL DEFAULT(datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT(datetime('now')),
+          FOREIGN KEY(supplier_id) REFERENCES users(user_id),
+          FOREIGN KEY(created_by) REFERENCES users(user_id)
+      )
+    `);
+
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS purchase_order_items (
+          po_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          po_id INTEGER NOT NULL,
+          variant_id INTEGER NOT NULL,
+          ordered_quantity INTEGER NOT NULL,
+          received_quantity INTEGER NOT NULL DEFAULT 0,
+          unit_cost REAL,
+          created_at TEXT NOT NULL DEFAULT(datetime('now')),
+          FOREIGN KEY(po_id) REFERENCES purchase_orders(po_id) ON DELETE CASCADE,
+          FOREIGN KEY(variant_id) REFERENCES product_variants(variant_id)
+      )
+    `);
+
+    await database.run("CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier ON purchase_orders(supplier_id)");
+    await database.run("CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(status)");
+    await database.run("CREATE INDEX IF NOT EXISTS idx_purchase_order_items_po ON purchase_order_items(po_id)");
+    await database.run("CREATE INDEX IF NOT EXISTS idx_purchase_order_items_variant ON purchase_order_items(variant_id)");
+
+    // Add columns to purchase_orders
+    await addColumnIfNotExists('purchase_orders', 'sent_at', 'TEXT');
+    await addColumnIfNotExists('purchase_orders', 'acknowledged_at', 'TEXT');
+    await addColumnIfNotExists('purchase_orders', 'received_at', 'TEXT');
+
+    // Self-healing backfill for purchase_orders columns
+    try {
+      await database.run(`
+        UPDATE purchase_orders
+        SET sent_at = created_at
+        WHERE sent_at IS NULL AND status IN ('SENT', 'ACKNOWLEDGED', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED')
+      `);
+      await database.run(`
+        UPDATE purchase_orders
+        SET acknowledged_at = updated_at
+        WHERE acknowledged_at IS NULL AND status IN ('ACKNOWLEDGED', 'PARTIALLY_RECEIVED', 'RECEIVED')
+      `);
+      await database.run(`
+        UPDATE purchase_orders
+        SET received_at = updated_at
+        WHERE received_at IS NULL AND status = 'RECEIVED'
+      `);
+      console.log("Self-healed purchase_orders status timestamps backfill.");
+    } catch (backfillErr) {
+      console.error("Error back-filling purchase_orders timestamps:", backfillErr.message);
+    }
+
+    console.log("Phase 6C purchase orders database structures initialized successfully.");
+  } catch (err) {
+    console.error("Error setting up Phase 6C purchase orders database structures:", err.message);
+  }
+
+  // ─── Phase 7 Business Intelligence & Insights Initialization ───────────
+  try {
+    // 1. Create API metrics tables
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS api_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        method TEXT NOT NULL,
+        path TEXT NOT NULL,
+        status_code INTEGER NOT NULL,
+        duration_ms REAL NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_api_metrics_created_at ON api_metrics(created_at)`);
+    await database.run(`CREATE INDEX IF NOT EXISTS idx_api_metrics_path ON api_metrics(path)`);
+
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS daily_api_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        method TEXT NOT NULL,
+        path TEXT NOT NULL,
+        status_code INTEGER NOT NULL,
+        request_count INTEGER NOT NULL,
+        avg_duration_ms REAL NOT NULL,
+        max_duration_ms REAL NOT NULL
+      )
+    `);
+    await database.run(`CREATE UNIQUE INDEX IF NOT EXISTS ux_daily_api_metrics ON daily_api_metrics(date, method, path, status_code)`);
+
+    // 2. Create Event summaries tables
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS daily_event_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        event_name TEXT NOT NULL,
+        product_id INTEGER NOT NULL DEFAULT -1,
+        category_id INTEGER NOT NULL DEFAULT -1,
+        event_count INTEGER NOT NULL
+      )
+    `);
+    await database.run(`CREATE UNIQUE INDEX IF NOT EXISTS ux_daily_event_metrics ON daily_event_metrics(date, event_name, product_id, category_id)`);
+
+    // 3. Auto-aggregate completed historical days on startup
+    console.log("[Analytics Setup] Running startup auto-aggregation and pruning...");
+
+    // Aggregate completed raw API metrics
+    await database.run(`
+      INSERT OR IGNORE INTO daily_api_metrics (date, method, path, status_code, request_count, avg_duration_ms, max_duration_ms)
+      SELECT DATE(created_at) AS d, method, path, status_code, COUNT(*), AVG(duration_ms), MAX(duration_ms)
+      FROM api_metrics
+      WHERE created_at < DATE('now')
+      GROUP BY d, method, path, status_code
+    `);
+
+    // Prune raw API metrics older than 30 days
+    const prunedApi = await database.run(`
+      DELETE FROM api_metrics WHERE created_at < datetime('now', '-30 days')
+    `);
+    if (prunedApi.changes > 0) {
+      console.log(`[Analytics Setup] Pruned ${prunedApi.changes} raw api_metrics rows older than 30 days.`);
+    }
+
+    // Aggregate completed raw events
+    await database.run(`
+      INSERT OR IGNORE INTO daily_event_metrics (date, event_name, product_id, category_id, event_count)
+      SELECT DATE(created_at) AS d, event_name, IFNULL(product_id, -1), IFNULL(category_id, -1), COUNT(*)
+      FROM analytics_events
+      WHERE created_at < DATE('now')
+      GROUP BY d, event_name, product_id, category_id
+    `);
+
+    // Prune raw events older than 90 days
+    const prunedEvents = await database.run(`
+      DELETE FROM analytics_events WHERE created_at < datetime('now', '-90 days')
+    `);
+    if (prunedEvents.changes > 0) {
+      console.log(`[Analytics Setup] Pruned ${prunedEvents.changes} raw analytics_events rows older than 90 days.`);
+    }
+
+    console.log("[Analytics Setup] Phase 7 metrics tables & pruning routines initialized.");
+  } catch (err) {
+    console.error("Error setting up Phase 7 metrics tables:", err.message);
+  }
+
+  // ─── Phase 8 Mock Payment Ecosystem Initialization ─────────────────────
+  try {
+    // 1. Platform Settings Configuration
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Seed default settings
+    await database.run("INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('commission_percentage', '10')");
+    await database.run("INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('fixed_transaction_fee', '15')");
+    await database.run("INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('minimum_commission', '0')");
+    await database.run("INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('maximum_commission', '10000')");
+    await database.run("INSERT OR IGNORE INTO platform_settings (key, value) VALUES ('schema_version', '7')");
+
+    // Fetch schema version
+    const versionRow = await database.get("SELECT value FROM platform_settings WHERE key = 'schema_version'");
+    const schemaVersion = parseInt(versionRow ? versionRow.value : '7', 10);
+
+    if (schemaVersion < 8) {
+      console.log("[Phase 8 Migration] Running orders check constraint migration...");
+      
+      // Disable foreign keys temporarily
+      await database.run("PRAGMA foreign_keys = OFF");
+      await database.run("BEGIN TRANSACTION");
+
+      try {
+        // Rename orders to orders_old
+        await database.run("ALTER TABLE orders RENAME TO orders_old");
+
+        // Create new orders table with relaxed CHECK constraints
+        await database.run(`
+          CREATE TABLE orders (
+            order_id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id             INTEGER NOT NULL,
+            order_number        TEXT NOT NULL UNIQUE,
+            status              TEXT NOT NULL DEFAULT 'pending'
+                                CHECK (status IN ('pending','processing','shipped','delivered','cancelled','returned')),
+            payment_method      TEXT NOT NULL
+                                CHECK (payment_method IN ('COD','UPI','CARD','WALLET')),
+            payment_status      TEXT NOT NULL DEFAULT 'pending'
+                                CHECK (payment_status IN ('pending','paid','failed','refunded','partially_refunded')),
+            subtotal_amount     NUMERIC NOT NULL DEFAULT 0 CHECK (subtotal_amount >= 0),
+            shipping_amount     NUMERIC NOT NULL DEFAULT 0 CHECK (shipping_amount >= 0),
+            tax_amount          NUMERIC NOT NULL DEFAULT 0 CHECK (tax_amount >= 0),
+            total_amount        NUMERIC NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
+            customer_name       TEXT NOT NULL,
+            customer_email      TEXT NOT NULL,
+            customer_phone      TEXT,
+            address_line_1      TEXT,
+            address_line_2      TEXT,
+            city                TEXT,
+            state               TEXT,
+            postal_code         TEXT,
+            country_code        TEXT NOT NULL DEFAULT 'IN',
+            placed_at           TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            coupon_id           INTEGER DEFAULT NULL,
+            discount_amount     REAL DEFAULT 0,
+            coupon_code_snapshot TEXT DEFAULT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE RESTRICT
+          )
+        `);
+
+        // Copy data from orders_old to orders
+        await database.run(`
+          INSERT INTO orders (
+            order_id, user_id, order_number, status, payment_method, payment_status,
+            subtotal_amount, shipping_amount, tax_amount, total_amount,
+            customer_name, customer_email, customer_phone, address_line_1, address_line_2,
+            city, state, postal_code, country_code, placed_at, updated_at,
+            coupon_id, discount_amount, coupon_code_snapshot
+          )
+          SELECT 
+            order_id, user_id, order_number, status, payment_method, payment_status,
+            subtotal_amount, shipping_amount, tax_amount, total_amount,
+            customer_name, customer_email, customer_phone, address_line_1, address_line_2,
+            city, state, postal_code, country_code, placed_at, updated_at,
+            coupon_id, discount_amount, coupon_code_snapshot
+          FROM orders_old
+        `);
+
+        // Drop orders_old
+        await database.run("DROP TABLE orders_old");
+
+        // Recreate indexes on orders
+        await database.run("CREATE INDEX IF NOT EXISTS ix_orders_user_date ON orders(user_id, placed_at)");
+        await database.run("CREATE INDEX IF NOT EXISTS ix_orders_status_payment ON orders(status, payment_status)");
+
+        // Update schema version to 8
+        await database.run("UPDATE platform_settings SET value = '8' WHERE key = 'schema_version'");
+
+        await database.run("COMMIT");
+        console.log("[Phase 8 Migration] orders check constraint migration completed successfully.");
+      } catch (migrationErr) {
+        await database.run("ROLLBACK");
+        console.error("[Phase 8 Migration] Migration failed, rolled back:", migrationErr.message);
+        throw migrationErr;
+      } finally {
+        await database.run("PRAGMA foreign_keys = ON");
+      }
+    }
+
+    // 2. Create Payments Table with Idempotency
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS payments (
+        payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL REFERENCES orders(order_id),
+        payment_method TEXT NOT NULL CHECK(payment_method IN ('COD', 'UPI', 'CARD', 'WALLET')),
+        status TEXT NOT NULL CHECK(status IN ('created', 'initiated', 'processing', 'authorized', 'captured', 'completed', 'failed', 'cancelled', 'expired', 'refunded', 'partially_refunded')),
+        amount REAL NOT NULL,
+        transaction_reference TEXT UNIQUE,
+        idempotency_key TEXT UNIQUE,
+        gateway_outcome TEXT CHECK(gateway_outcome IN ('success', 'failure', 'timeout', 'cancelled', 'expired', 'pending')),
+        failure_reason TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 3. Create Payment Events (Timeline logs)
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS payment_events (
+        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id INTEGER NOT NULL REFERENCES payments(payment_id),
+        previous_state TEXT,
+        new_state TEXT NOT NULL,
+        actor TEXT NOT NULL CHECK(actor IN ('system', 'customer', 'admin')),
+        metadata TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 4. Create Refunds Table with Idempotency
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS refunds (
+        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id INTEGER NOT NULL REFERENCES payments(payment_id),
+        amount REAL NOT NULL,
+        reason TEXT NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('requested', 'approved', 'processing', 'completed', 'rejected', 'failed')),
+        rejection_reason TEXT,
+        admin_notes TEXT,
+        idempotency_key TEXT UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    // Ensure admin_notes column exists on older databases (idempotent ALTER)
+    await database.run(`ALTER TABLE refunds ADD COLUMN admin_notes TEXT`).catch(() => {/* column already exists */});
+
+    // 4b. Refund Disbursements — tracks where non-wallet refunds money goes
+    // For WALLET refunds, wallet_transactions is the source of truth.
+    // For COD/UPI/CARD, the admin must manually transfer and mark this record as completed.
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS refund_disbursements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        refund_id INTEGER NOT NULL REFERENCES refunds(refund_id),
+        order_id INTEGER NOT NULL REFERENCES orders(order_id),
+        user_id INTEGER NOT NULL REFERENCES users(user_id),
+        payment_method TEXT NOT NULL,
+        amount REAL NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending_manual'
+                   CHECK(status IN ('pending_manual', 'completed', 'failed', 'cancelled')),
+        notes TEXT,
+        completed_at DATETIME,
+        idempotency_key TEXT UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 5. Create Wallet Transactions Ledger
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS wallet_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(user_id),
+        type TEXT NOT NULL CHECK(type IN ('deposit', 'payment', 'refund', 'adjustment_credit', 'adjustment_debit')),
+        amount REAL NOT NULL,
+        reference_id TEXT,
+        idempotency_key TEXT UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 6. Create Supplier Payouts Table
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS supplier_payouts (
+        payout_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        supplier_id INTEGER NOT NULL REFERENCES users(user_id),
+        order_id INTEGER NOT NULL REFERENCES orders(order_id),
+        amount REAL NOT NULL,
+        commission_deducted REAL NOT NULL,
+        platform_fee_deducted REAL NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('pending', 'scheduled', 'processing', 'completed', 'failed')),
+        timeline TEXT,
+        idempotency_key TEXT UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 7. Create Platform-Wide Financial Audit Logs
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS financial_events (
+        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_type TEXT NOT NULL CHECK(entity_type IN ('payment', 'refund', 'refund_disbursement', 'payout', 'wallet_transaction')),
+        entity_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        actor TEXT NOT NULL CHECK(actor IN ('system', 'customer', 'admin')),
+        metadata TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    const financialEventsSchema = await database.get(
+      "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'financial_events'"
+    );
+    if (
+      financialEventsSchema?.sql &&
+      !financialEventsSchema.sql.includes("'refund_disbursement'")
+    ) {
+      await database.run('ALTER TABLE financial_events RENAME TO financial_events_legacy');
+      await database.run(`
+        CREATE TABLE financial_events (
+          event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          entity_type TEXT NOT NULL CHECK(entity_type IN ('payment', 'refund', 'refund_disbursement', 'payout', 'wallet_transaction')),
+          entity_id INTEGER NOT NULL,
+          action TEXT NOT NULL,
+          actor TEXT NOT NULL CHECK(actor IN ('system', 'customer', 'admin')),
+          metadata TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await database.run(`
+        INSERT INTO financial_events (event_id, entity_type, entity_id, action, actor, metadata, created_at)
+        SELECT event_id, entity_type, entity_id, action, actor, metadata, created_at
+        FROM financial_events_legacy
+      `);
+      await database.run('DROP TABLE financial_events_legacy');
+      console.log('Self-healed financial_events entity_type constraint for refund disbursement audits.');
+    }
+
+    console.log("[Payment Setup] Phase 8 payment systems tables initialized.");
+
+    // ─── Phase 9: Security & Session Management ───
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS schema_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        version TEXT NOT NULL UNIQUE,
+        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+
+    await database.run(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        ip_address TEXT,
+        user_agent TEXT,
+        expires_at TEXT NOT NULL,
+        last_used_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        revoked_at TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // Insert v1.0.0 version seed
+    await database.run(`
+      INSERT OR IGNORE INTO schema_versions (version) VALUES ('v1.0.0')
+    `);
+
+  } catch (err) {
+    console.error("Error setting up Phase 8 and 9 tables:", err.message);
   }
 
   return database;
